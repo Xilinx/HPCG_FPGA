@@ -20,6 +20,8 @@
 
 #include "ComputeDotProduct.hpp"
 #include "ComputeDotProduct_ref.hpp"
+#include "ComputeDotProduct_FPGA.hpp"
+#include <iostream>
 
 /*!
   Routine to compute the dot product of two vectors.
@@ -41,7 +43,12 @@
 int ComputeDotProduct(const local_int_t n, const Vector & x, const Vector & y,
     double & result, double & time_allreduce, bool & isOptimized) {
 
-  // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
-  isOptimized = false;
-  return ComputeDotProduct_ref(n, x, y, result, time_allreduce);
+  // // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
+  // isOptimized = false;
+  // return ComputeDotProduct_ref(n, x, y, result, time_allreduce);
+  // 
+  // output is zero if all is correct
+  return ComputeDotProduct_FPGA(n, x, y, result, time_allreduce);
+
+  
 }
