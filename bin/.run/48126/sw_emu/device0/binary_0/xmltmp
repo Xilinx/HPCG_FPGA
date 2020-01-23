@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project name="vecdotprod">
+  <platform vendor="xilinx" boardid="u250" name="qdma" featureRomTime="1557485610">
+    <version major="201910" minor="1"/>
+    <description/>
+    <board name="xilinx.com:au250:1.0" vendor="xilinx.com" fpga="xcu250-figd2104-2L-e">
+      <interfaces>
+        <interface id="int1" name="PCIe" type="gen3x16"/>
+      </interfaces>
+      <memories>
+        <memory name="dynamic_region_memory_subsystem_memory_ddr4_mem00" type="ddr4" size="16GB"/>
+        <memory name="dynamic_region_memory_subsystem_memory_ddr4_mem01" type="ddr4" size="16GB"/>
+        <memory name="dynamic_region_memory_subsystem_memory_ddr4_mem02" type="ddr4" size="16GB"/>
+      </memories>
+      <images>
+        <image name="au250_image.jpg" type="HDPI"/>
+        <image name="" type="MDPI"/>
+        <image name="" type="LDPI"/>
+      </images>
+      <id>
+        <vendor>0x10EE</vendor>
+        <device>0x5014</device>
+        <subsystem>0x000E</subsystem>
+      </id>
+    </board>
+    <build_flow/>
+    <host architecture="x86_64"/>
+    <device name="fpga0" fpgaDevice="virtexuplus:xcu250:figd2104:-2L:e" addrWidth="0">
+      <core name="OCL_REGION_0" target="csim" type="clc_region" clockFreq="0MHz" numComputeUnits="60">
+        <kernel name="vecdotprod" language="c" vlnv="xilinx.com:hls:vecdotprod:1.0" preferredWorkGroupSizeMultiple="0" workGroupSize="1" debug="true" interrupt="true" hwControlProtocol="ap_ctrl_chain">
+          <port name="A" mode="read_only" range="" dataWidth="512" portType="stream" base=""/>
+          <port name="B" mode="read_only" range="" dataWidth="512" portType="stream" base=""/>
+          <port name="RES" mode="write_only" range="" dataWidth="128" portType="stream" base=""/>
+          <port name="S_AXI_CONTROL" mode="slave" range="0x1000" dataWidth="32" portType="addressable" base="0x0"/>
+          <arg name="a" addressQualifier="4" id="0" port="A" size="0x8" offset="0x0" hostOffset="0x0" hostSize="0x8" type="stream&lt;qdma_axis&lt;512, 0, 0, 0>, 0>&amp;" memSize="0x40" origName="a" origUse="variable"/>
+          <arg name="b" addressQualifier="4" id="1" port="B" size="0x8" offset="0xC" hostOffset="0x0" hostSize="0x8" type="stream&lt;qdma_axis&lt;512, 0, 0, 0>, 0>&amp;" memSize="0x40" origName="b" origUse="variable"/>
+          <arg name="res" addressQualifier="4" id="2" port="RES" size="0x8" offset="0x18" hostOffset="0x0" hostSize="0x8" type="stream&lt;qdma_axis&lt;64, 0, 0, 0>, 0>&amp;" memSize="0x10" origName="res" origUse="variable"/>
+          <compileWorkGroupSize x="1" y="1" z="1"/>
+          <maxWorkGroupSize x="1" y="1" z="1"/>
+          <string_table/>
+          <instance name="vecdotprod_1">
+            <addrRemap base="0x00000000" port="S_AXI_CONTROL"/>
+          </instance>
+        </kernel>
+      </core>
+    </device>
+  </platform>
+</project>
