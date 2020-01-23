@@ -45,10 +45,10 @@ int ComputeDotProduct(const local_int_t n, const Vector & x, const Vector & y,
 
   // // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
   // isOptimized = false;
-  // return ComputeDotProduct_ref(n, x, y, result, time_allreduce);
-  // 
+  // double res_test = 0.0;
+  // ComputeDotProduct_ref(n, x, y, res_test, time_allreduce);
   // output is zero if all is correct
-  return ComputeDotProduct_FPGA(n, x, y, result, time_allreduce);
-
-  
+  ComputeDotProduct_FPGA(n, x, y, result, time_allreduce);
+  // std::cout<<"HW: "<<result<<" SW: "<<res_test<<std::endl;
+  return 0;
 }

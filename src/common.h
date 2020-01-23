@@ -8,10 +8,7 @@
 
 #define HIGH 100
 #define LOW -100
-//#define VECTOR_LENGTH 10000000//100000000 
-//#define BUFFERED_BLOCKS 1
 
-#define KERNEL_NAME "vecsumprod"
 #define TYPE DOUBLE
 #define STREAMS 3
 
