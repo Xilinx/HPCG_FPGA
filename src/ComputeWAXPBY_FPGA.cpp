@@ -14,7 +14,7 @@
 // File containing common info
 #include "common.h"
 
-#include "ComputeDotProduct_FPGA.hpp"
+#include "ComputeWAXPBY_FPGA.hpp"
 
 #ifndef HPCG_NO_MPI
 #include <mpi.h>
@@ -24,35 +24,39 @@
 #include <omp.h>
 #endif
 
-decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
-decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
-decltype(&clReadStream) xcl::Stream::readStream = nullptr;
-decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
-decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
+// decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
+// decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
+// decltype(&clReadStream) xcl::Stream::readStream = nullptr;
+// decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
+// decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
 
-int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector & y,
-    double & result, double & time_allreduce){
+int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x,
+    const double beta, const Vector & y, Vector & w) {
 
-	unsigned long size = n;
+	assert(x.localLength>=n); // Test vector lengths
+  	assert(y.localLength>=n);
 
-	auto binaryFile = "../bitstreams/hw/vecdotprod.xclbin";
+  	unsigned long size = n;
 
-	std::vector<synt_type, aligned_allocator<synt_type>> h_a(size);
+	auto binaryFile = "../bitstreams/hw/vecsumprod.xclbin";
+
+  	std::vector<synt_type, aligned_allocator<synt_type>> h_a(size);
     std::vector<synt_type, aligned_allocator<synt_type>> h_b(size);
     std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size);
-
+    // synt_type alpha,beta;
     for(unsigned int i = 0; i < size; i++){
     	h_a[i] = x.values[i];
     	h_b[i] = y.values[i];
+    	hw_results[i]=0;
     }
 
-    hw_results[0] = 0.0;
-
+    // OpenCL Setup
+    // OpenCL objects
     cl::Device device;
     cl::Context context;
     cl::CommandQueue q;
     cl::Program program;
-    cl::Kernel krnl;
+    cl::Kernel krnl_vadd;
 
     // Error Status variable
     cl_int err;
@@ -61,6 +65,7 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
     // platforms and will return list of devices connected to Xilinx platform
     auto devices = xcl::get_xil_devices();
 
+    // Selecting the first available Xilinx device
     device = devices[0];
     // read_binary_file() is a utility API which will load the binaryFile
     // and will return the pointer to file buffer.
@@ -75,13 +80,14 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
         OCL_CHECK(err,
                   q = cl::CommandQueue(
                       context, {device}, CL_QUEUE_PROFILING_ENABLE, &err));
+
         cl::Program program(context, {device}, bins, NULL, &err);
         if (err != CL_SUCCESS) {
             std::cout << "Failed to program device[" << i
                       << "] with xclbin file!\n";
         } else {
             OCL_CHECK(
-                err, krnl = cl::Kernel(program, "vecdotprod", &err));
+                err, krnl_vadd = cl::Kernel(program, "vecsumprod", &err));
             valid_device++;
             break; // we break because we found a valid device
         }
@@ -101,7 +107,7 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
     // Device Connection specification of the stream through extension pointer
     cl_int ret;
     cl_mem_ext_ptr_t ext;
-    ext.param = krnl.get();
+    ext.param = krnl_vadd.get();
     ext.obj = NULL;
 
     //Create write stream for argument 0 and 1 of kernel
@@ -122,9 +128,12 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
               read_stream = xcl::Stream::createStream(
                   device.get(), CL_STREAM_READ_ONLY, CL_STREAM, &ext, &ret));
 
-    // Launch the Kernel
+    //Set alpha and beta
+    OCL_CHECK(err, err = krnl_vadd.setArg(3, alpha));
+    OCL_CHECK(err, err = krnl_vadd.setArg(4, beta));
+
     cl::Event nb_wait_event;
-    OCL_CHECK(err, err = q.enqueueTask(krnl, NULL, &nb_wait_event));
+    OCL_CHECK(err, err = q.enqueueTask(krnl_vadd, NULL, &nb_wait_event));
 
     // Initiating the WRITE transfer
     cl_stream_xfer_req nb_wr_req{0};
@@ -153,7 +162,7 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
     OCL_CHECK(ret,
               xcl::Stream::readStream(read_stream,
                                       hw_results.data(),
-                                      sizeof(synt_type),
+                                      vector_size_bytes,
                                       &nb_rd_req,
                                       &ret));
 
@@ -164,22 +173,13 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
               xcl::Stream::pollStreams(
                   device.get(), poll_req, 3, 3, &num_compl, 500000, &ret));
 
+    // Ensuring all OpenCL objects are released.
     q.finish();
-    double local_result = hw_results[0];
-    // Releasing Streams
     xcl::Stream::releaseStream(read_stream);
     xcl::Stream::releaseStream(write_stream_a);
     xcl::Stream::releaseStream(write_stream_b);
-    #ifndef HPCG_NO_MPI
-    // Use MPI's reduce function to collect all partial sums
-        double t0 = mytimer();
-        double global_result = 0.0;
-        MPI_Allreduce(&local_result, &global_result, 1, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
-        result = global_result;
-        time_allreduce += mytimer() - t0;
-    #else
-        time_allreduce += 0.0;
-        result = local_result;
-    #endif  
-    return 0;
+
+    for(unsigned int i = 0; i < size; i++){
+    	w.values[i]=hw_results[i];
+    }
 }

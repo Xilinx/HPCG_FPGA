@@ -76,6 +76,7 @@ HPCG_DEPS = src/xcl2.o \
 		 src/ComputeSYMGS_ref.o \
 		 src/ComputeWAXPBY.o \
 		 src/ComputeWAXPBY_ref.o \
+		 src/ComputeWAXPBY_FPGA.o \
 		 src/ComputeMG_ref.o \
 		 src/ComputeMG.o \
 		 src/ComputeProlongation_ref.o \
@@ -174,7 +175,9 @@ src/xcl2.o: common/includes/xcl2/xcl2.cpp common/includes/xcl2/xcl2.hpp
 
 src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
-# 	$(CXX) $(CXXFLAGS) -Isrc/common/includes/xcl2 -pthread -I/opt/xilinx/xrt/include -I/proj/xbuilds/SWIP/2020.1_0121_2001/installs/lin64/Vivado/2020.1/include -Wall -g -std=c++11  -fmessage-length=0 src/common/includes/xcl2/xcl2.cpp -Isrc $< -o $@ $(LD_FPGA_FLAGS)
+
+src/ComputeWAXPBY_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
 src/finalize.o: src/finalize.cpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
