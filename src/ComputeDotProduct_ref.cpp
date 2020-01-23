@@ -17,7 +17,7 @@
 
  HPCG routine
  */
-
+#include <iostream>
 #ifndef HPCG_NO_MPI
 #include <mpi.h>
 #include "mytimer.hpp"
@@ -75,6 +75,5 @@ int ComputeDotProduct_ref(const local_int_t n, const Vector & x, const Vector & 
   time_allreduce += 0.0;
   result = local_result;
 #endif
-
   return 0;
 }
