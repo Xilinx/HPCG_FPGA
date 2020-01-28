@@ -24,11 +24,11 @@
 #include <omp.h>
 #endif
 
-decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
-decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
-decltype(&clReadStream) xcl::Stream::readStream = nullptr;
-decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
-decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
+// decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
+// decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
+// decltype(&clReadStream) xcl::Stream::readStream = nullptr;
+// decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
+// decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
 
 int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector & y,
     double & result, double & time_allreduce){
