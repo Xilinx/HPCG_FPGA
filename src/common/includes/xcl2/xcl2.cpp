@@ -32,6 +32,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/stat.h>
 #include <unistd.h>
 
+decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
+decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
+decltype(&clReadStream) xcl::Stream::readStream = nullptr;
+decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
+decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
+
 namespace xcl {
 std::vector<cl::Device> get_devices(const std::string &vendor_name) {
     size_t i;
@@ -45,8 +51,8 @@ std::vector<cl::Device> get_devices(const std::string &vendor_name) {
                   std::string platformName =
                       platform.getInfo<CL_PLATFORM_NAME>(&err));
         if (platformName == vendor_name) {
-            // std::cout << "Found Platform" << std::endl;
-            // std::cout << "Platform Name: " << platformName.c_str() << std::endl;
+            std::cout << "Found Platform" << std::endl;
+            std::cout << "Platform Name: " << platformName.c_str() << std::endl;
             break;
         }
     }
@@ -65,7 +71,7 @@ std::vector<cl::Device> get_xil_devices() { return get_devices("Xilinx"); }
 
 std::vector<unsigned char>
 read_binary_file(const std::string &xclbin_file_name) {
-    // std::cout << "INFO: Reading " << xclbin_file_name << std::endl;
+    std::cout << "INFO: Reading " << xclbin_file_name << std::endl;
 
     if (access(xclbin_file_name.c_str(), R_OK) != 0) {
         printf("ERROR: %s xclbin not available please build\n",
@@ -73,7 +79,7 @@ read_binary_file(const std::string &xclbin_file_name) {
         exit(EXIT_FAILURE);
     }
     //Loading XCL Bin into char buffer
-    // std::cout << "Loading: '" << xclbin_file_name.c_str() << "'\n";
+    std::cout << "Loading: '" << xclbin_file_name.c_str() << "'\n";
     std::ifstream bin_file(xclbin_file_name.c_str(), std::ifstream::binary);
     bin_file.seekg(0, bin_file.end);
     auto nb = bin_file.tellg();
