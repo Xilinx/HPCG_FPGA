@@ -44,7 +44,7 @@ int ComputeDotProduct(const local_int_t n, const Vector & x, const Vector & y,
     double & result, double & time_allreduce, bool & isOptimized) {
 
   // // This line and the next two lines should be removed and your version of ComputeDotProduct should be used.
-  // isOptimized = false;
+  isOptimized = true;
   // double res_test = 0.0;
   // ComputeDotProduct_ref(n, x, y, res_test, time_allreduce);
   // output is zero if all is correct

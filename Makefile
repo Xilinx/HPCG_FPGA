@@ -7,7 +7,7 @@ include $(setup_file)
 # include ./utils.mk
 
 # Points to top directory of Git repository
-COMMON_REPO = .
+COMMON_REPO = src/
 PWD = $(shell readlink -f .)
 ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 
@@ -170,13 +170,10 @@ src/ComputeDotProduct.o: src/ComputeDotProduct.cpp src/ComputeDotProduct.hpp $(P
 src/ComputeDotProduct_ref.o: src/ComputeDotProduct_ref.cpp src/ComputeDotProduct_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
-src/xcl2.o: common/includes/xcl2/xcl2.cpp common/includes/xcl2/xcl2.hpp
+src/xcl2.o: src/common/includes/xcl2/xcl2.cpp src/common/includes/xcl2/xcl2.hpp
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) $(FPGA_HOST_FLAGS) -Isrc $< -o $@ 
 
 src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
-
-src/ComputeWAXPBY_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
 src/finalize.o: src/finalize.cpp $(PRIMARY_HEADERS)
@@ -208,6 +205,9 @@ src/ComputeWAXPBY.o: src/ComputeWAXPBY.cpp src/ComputeWAXPBY.hpp $(PRIMARY_HEADE
 
 src/ComputeWAXPBY_ref.o: src/ComputeWAXPBY_ref.cpp src/ComputeWAXPBY_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
+
+src/ComputeWAXPBY_FPGA.o: src/ComputeWAXPBY_FPGA.cpp src/ComputeWAXPBY_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
 src/ComputeMG_ref.o: src/ComputeMG_ref.cpp src/ComputeMG_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
