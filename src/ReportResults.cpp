@@ -109,13 +109,13 @@ void ReportResults(const SparseMatrix & A, int numberOfMgLevels, int numberOfCgS
       double fnnz_Af = Af->totalNumberOfNonzeros;
       double fnumberOfPresmootherSteps = Af->mgData->numberOfPresmootherSteps;
       double fnumberOfPostsmootherSteps = Af->mgData->numberOfPostsmootherSteps;
-      fnops_precond += fnumberOfPresmootherSteps*fniters*4.0*fnnz_Af; // number of presmoother flops
-      fnops_precond += fniters*2.0*fnnz_Af; // cost of fine grid residual calculation
-      fnops_precond += fnumberOfPostsmootherSteps*fniters*4.0*fnnz_Af;  // number of postsmoother flops
+      fnops_precond += fnumberOfPresmootherSteps*fniters*16.0*fnnz_Af; // number of presmoother flops
+      fnops_precond += fniters*8.0*fnnz_Af; // cost of fine grid residual calculation
+      fnops_precond += fnumberOfPostsmootherSteps*fniters*16.0*fnnz_Af;  // number of postsmoother flops
       Af = Af->Ac; // Go to next coarse level
     }
 
-    fnops_precond += fniters*4.0*((double) Af->totalNumberOfNonzeros); // One symmetric GS sweep at the coarsest level
+    fnops_precond += fniters*16.0*((double) Af->totalNumberOfNonzeros); // One symmetric GS sweep at the coarsest level
     double fnops = fnops_ddot+fnops_waxpby+fnops_sparsemv+fnops_precond;
     double frefnops = fnops * ((double) refMaxIters)/((double) optMaxIters);
 
