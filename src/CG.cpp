@@ -30,6 +30,7 @@
 #include "ComputeMG.hpp"
 #include "ComputeDotProduct.hpp"
 #include "ComputeWAXPBY.hpp"
+#include <iostream>
 
 
 // Use TICK and TOCK to time a code section in MATLAB-like fashion
@@ -59,7 +60,7 @@
 int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
     const int max_iter, const double tolerance, int & niters, double & normr, double & normr0,
     double * times, bool doPreconditioning) {
-
+  
   double t_begin = mytimer();  // Start timing right away
   normr = 0.0;
   double rtz = 0.0, oldrtz = 0.0, alpha = 0.0, beta = 0.0, pAp = 0.0;
@@ -74,7 +75,6 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
   Vector & z = data.z; // Preconditioned residual vector
   Vector & p = data.p; // Direction vector (in MPI mode ncol>=nrow)
   Vector & Ap = data.Ap;
-
   if (!doPreconditioning && A.geom->rank==0) HPCG_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
 
 #ifdef HPCG_DEBUG
