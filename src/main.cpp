@@ -60,6 +60,7 @@ using std::endl;
 #include "TestCG.hpp"
 #include "TestSymmetry.hpp"
 #include "TestNorms.hpp"
+#include "FlattenMatrix.hpp"
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
@@ -162,11 +163,17 @@ int main(int argc, char * argv[]) {
   CGData data;
   InitializeSparseCGData(A, data);
 
-
+  for(int i = 0; i < A.localNumberOfRows; i++){
+    for (int j = 0; j < 27; j++)
+      std::cout << A.mtxIndL[i][j] << std::endl;
+  }
 
   ////////////////////////////////////
   // Reference SpMV+MG Timing Phase //
   ////////////////////////////////////
+  std::cout<<"################################################"<<std::endl;
+  std::cout<<"       STARTING REF BENCHMARK:SpMV and MG       "<<std::endl;
+  std::cout<<"################################################"<<std::endl;
 
   // Call Reference SpMV and MG. Compute Optimization time as ratio of times in these routines
 
@@ -196,10 +203,14 @@ int main(int argc, char * argv[]) {
   if (rank==0) HPCG_fout << "Total SpMV+MG timing phase execution time in main (sec) = " << mytimer() - t1 << endl;
 #endif
 
+ 
   ///////////////////////////////
   // Reference CG Timing Phase //
   ///////////////////////////////
-
+  
+  std::cout<<"################################################"<<std::endl;
+  std::cout<<"           STARTING REF BENCHMARK:CG            "<<std::endl;
+  std::cout<<"################################################"<<std::endl;
 #ifdef HPCG_DEBUG
   t1 = mytimer();
 #endif
@@ -238,10 +249,23 @@ int main(int argc, char * argv[]) {
   if (geom->size == 1) WriteProblem(*geom, A, b, x, xexact);
 #endif
 
-
+  
+  std::cout<<"################################################"<<std::endl;
+  std::cout<<"            FINISHED REF BENCHMARK              "<<std::endl;
+  std::cout<<"################################################"<<std::endl;
   //////////////////////////////
   // Validation Testing Phase //
   //////////////////////////////
+  std::cout<<"################################################"<<std::endl;
+#ifdef FPGA
+  std::cout<<"    TESTING CORRECTNESS AGAINST FPGA BENCHMARK  "<<std::endl;
+#else
+  std::cout<<"      TESTING CORRECTNESS AGAINST EMULATION     "<<std::endl;
+#endif
+  std::cout<<"################################################"<<std::endl;
+
+  FlattenMatrix(A,  27);//we suppose that the number of nonzero values in a row is always 27`
+
 
 #ifdef HPCG_DEBUG
   t1 = mytimer();
@@ -281,6 +305,7 @@ int main(int argc, char * argv[]) {
   for (int i=0; i< numberOfCalls; ++i) {
     ZeroVector(x); // start x at all zeros
     double last_cummulative_time = opt_times[0];
+
     ierr = CG( A, data, b, x, optMaxIters, refTolerance, niters, normr, normr0, &opt_times[0], true);
     if (ierr) ++err_count; // count the number of errors in CG
     if (normr / normr0 > refTolerance) ++tolerance_failures; // the number of failures to reduce residual
@@ -312,6 +337,13 @@ int main(int argc, char * argv[]) {
 
   // Here we finally run the benchmark phase
   // The variable total_runtime is the target benchmark execution time in seconds
+  std::cout<<"################################################"<<std::endl;
+#ifdef FPGA
+  std::cout<<"           STARTING FPGA BENCHMARK              "<<std::endl;
+#else
+  std::cout<<"       STARTING CPU EMULATION BENCHMARK         "<<std::endl;
+#endif
+  std::cout<<"################################################"<<std::endl;
 
   double total_runtime = params.runningTime;
   int numberOfCgSets = int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
@@ -338,6 +370,15 @@ int main(int argc, char * argv[]) {
     if (rank==0) HPCG_fout << "Call [" << i << "] Scaled Residual [" << normr/normr0 << "]" << endl;
     testnorms_data.values[i] = normr/normr0; // Record scaled residual from this run
   }
+	
+  std::cout<<"################################################"<<std::endl;
+#ifdef FPGA
+  std::cout<<"           FINISHED FPGA BENCHMARK              "<<std::endl;
+#else
+  std::cout<<"         FINISHED EMULATION BENCHMARK           "<<std::endl;
+#endif
+  std::cout<<"################################################"<<std::endl;
+
 
   // Compute difference between known exact solution and computed solution
   // All processors are needed here.
