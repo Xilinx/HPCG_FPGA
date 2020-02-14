@@ -28,7 +28,7 @@
 #include <omp.h>
 #endif
 #include <cassert>
-
+#include <iostream>
 /*!
   Routine to compute matrix vector product y = Ax where:
   Precondition: First call exchange_externals to get off-processor values of x
@@ -63,9 +63,9 @@ int ComputeSPMV_ref( const SparseMatrix & A, Vector & x, Vector & y) {
     const double * const cur_vals = A.matrixValues[i];
     const local_int_t * const cur_inds = A.mtxIndL[i];
     const int cur_nnz = A.nonzerosInRow[i];
-
-    for (int j=0; j< cur_nnz; j++)
+    for (int j=0; j< cur_nnz; j++){
       sum += cur_vals[j]*xv[cur_inds[j]];
+    }
     yv[i] = sum;
   }
   return 0;

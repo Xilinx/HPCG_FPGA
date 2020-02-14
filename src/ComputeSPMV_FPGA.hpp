@@ -9,11 +9,12 @@
 // ***************************************************
 //@HEADER
 
-#ifndef COMPUTEWAXPBY_FPGA_HPP
-#define COMPUTEWAXPBY_FPGA_HPP
+#ifndef COMPUTESPMV_FPGA_HPP
+#define COMPUTESPMV_FPGA_HPP
 #include "Vector.hpp"
 #include "common.h"
+#include "SparseMatrix.hpp"
 
-int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x,
-    const double beta, const Vector & y, Vector & w);
-#endif // COMPUTEWAXPBY_FPGA_HPP
+int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y);
+
+#endif // COMPUTESPMV_FPGA_HPP

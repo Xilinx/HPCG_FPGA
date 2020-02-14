@@ -63,6 +63,13 @@ struct SparseMatrix_STRUCT {
   mutable MGData * mgData; // Pointer to the coarse level data for this fine matrix
   void * optimizationData;  // pointer that can be used to store implementation-specific data
 
+
+  //ADDED VARIABLES FOR THE FPGA KERNEL
+  local_int_t *flat_mtxIndL; //!< flat matrix indices as local values ADDED FOR SPMV OPENCL
+  double *flat_matrixDiagonal; //!< flat values of matrix diagonal entries ADDED FOR SPMV OPENCL
+  double *flat_matrixValues; //!< flat values of matrix entries ADDED FOR SPMV OPENCL
+
+
 #ifndef HPCG_NO_MPI
   local_int_t numberOfExternalValues; //!< number of entries that are external to this process
   int numberOfSendNeighbors; //!< number of neighboring processes that will be send local data

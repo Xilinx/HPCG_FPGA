@@ -40,11 +40,12 @@ BINARY_CONTAINERS += $(BUILD_DIR)/vecdotprod.xclbin
 BINARY_CONTAINER_vecdotprod_OBJS += $(TEMP_DIR)/vecdotprod.xo
 
 CP = cp -rf
-
+CXXFLAGS += -Wno-long-long -DHPCG_DEBUG
 # FPGA_HOST_FLAGS = $(xcl2_CXXFLAGS) -pthread $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11 -fmessage-length=0
 # LDFLAGS += $(xcl2_LDFLAGS) $(opencl_LDFLAGS) -lrt -lstdc++ --sysroot=$(SYSROOT)
 
 HPCG_DEPS = src/xcl2.o \
+		 src/FlattenMatrix.o \
 		 src/CG.o \
 		 src/CG_ref.o \
 		 src/TestCG.o \
@@ -72,6 +73,7 @@ HPCG_DEPS = src/xcl2.o \
 		 src/ComputeOptimalShapeXYZ.o \
 		 src/ComputeSPMV.o \
 		 src/ComputeSPMV_ref.o \
+		 src/ComputeSPMV_FPGA.o \
 		 src/ComputeSYMGS.o \
 		 src/ComputeSYMGS_ref.o \
 		 src/ComputeWAXPBY.o \
@@ -98,6 +100,7 @@ bin/xhpcg: src/main.o $(HPCG_DEPS)
 
 clean:
 	rm -f src/*.o bin/xhpcg
+	rm -f bin/*.txt
 
 .PHONY: all clean
 
@@ -170,12 +173,6 @@ src/ComputeDotProduct.o: src/ComputeDotProduct.cpp src/ComputeDotProduct.hpp $(P
 src/ComputeDotProduct_ref.o: src/ComputeDotProduct_ref.cpp src/ComputeDotProduct_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
-src/xcl2.o: src/common/includes/xcl2/xcl2.cpp src/common/includes/xcl2/xcl2.hpp
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) $(FPGA_HOST_FLAGS) -Isrc $< -o $@ 
-
-src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
-
 src/finalize.o: src/finalize.cpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
@@ -206,9 +203,6 @@ src/ComputeWAXPBY.o: src/ComputeWAXPBY.cpp src/ComputeWAXPBY.hpp $(PRIMARY_HEADE
 src/ComputeWAXPBY_ref.o: src/ComputeWAXPBY_ref.cpp src/ComputeWAXPBY_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
-src/ComputeWAXPBY_FPGA.o: src/ComputeWAXPBY_FPGA.cpp src/ComputeWAXPBY_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
-
 src/ComputeMG_ref.o: src/ComputeMG_ref.cpp src/ComputeMG_ref.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
@@ -229,4 +223,20 @@ src/CheckAspectRatio.o: src/CheckAspectRatio.cpp src/CheckAspectRatio.hpp $(PRIM
 
 src/OutputFile.o: src/OutputFile.cpp src/OutputFile.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
+
+src/xcl2.o: src/common/includes/xcl2/xcl2.cpp src/common/includes/xcl2/xcl2.hpp
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) $(FPGA_HOST_FLAGS) -Isrc $< -o $@ 
+
+src/ComputeWAXPBY_FPGA.o: src/ComputeWAXPBY_FPGA.cpp src/ComputeWAXPBY_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+
+src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+
+src/ComputeSPMV_FPGA.o: src/ComputeSPMV_FPGA.cpp src/ComputeSPMV_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+
+src/FlattenMatrix.o: src/FlattenMatrix.cpp src/FlattenMatrix.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
+
 
