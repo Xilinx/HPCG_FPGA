@@ -31,7 +31,7 @@
 using std::endl;
 #include <vector>
 #include "hpcg.hpp"
-
+#include "FlattenMatrix.hpp"
 #include "TestCG.hpp"
 #include "CG.hpp"
 
@@ -78,6 +78,7 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
   }
   ReplaceMatrixDiagonal(A, exaggeratedDiagA);
 
+  FlattenMatrix(A,  27);  //fill flat matrix
   int niters = 0;
   double normr = 0.0;
   double normr0 = 0.0;
@@ -118,6 +119,7 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
   DeleteVector(exaggeratedDiagA);
   DeleteVector(origB);
   testcg_data.normr = normr;
+  FlattenMatrix(A,  27);
 
   return 0;
 }

@@ -20,7 +20,12 @@
 
 #include "ComputeSPMV.hpp"
 #include "ComputeSPMV_ref.hpp"
+#include "common.h"
+#include "ComputeSPMV_FPGA.hpp"
+// #define MAXNONZEROELEMENTS 27
+#include <iostream>
 
+using namespace std;
 /*!
   Routine to compute sparse matrix vector product y = Ax where:
   Precondition: First call exchange_externals to get off-processor values of x
@@ -37,9 +42,20 @@
 
   @see ComputeSPMV_ref
 */
+
+
 int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y) {
 
   // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
+  
+  // FlattenMatrix(A,  27);
+#ifndef FPGA
+  A.isSpmvOptimized = true;
+  //ComputeSPMV_FPGA(A.nonzerosInRow,A.flat_mtxIndL,A.flat_matrixValues,x.values,y.values,A.localNumberOfRows);
+  return ComputeSPMV_FPGA(A, x, y);
+#else
   A.isSpmvOptimized = false;
   return ComputeSPMV_ref(A, x, y);
+#endif
+
 }
