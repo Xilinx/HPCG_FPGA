@@ -20,12 +20,12 @@
 
 #include "ComputeSPMV.hpp"
 #include "ComputeSPMV_ref.hpp"
-#include "common.h"
 #include "ComputeSPMV_FPGA.hpp"
-// #define MAXNONZEROELEMENTS 27
+#include "PrepareVector.hpp"
+ #define MAXNONZEROELEMENTS 32
 #include <iostream>
 
-using namespace std;
+// using namespace std;
 /*!
   Routine to compute sparse matrix vector product y = Ax where:
   Precondition: First call exchange_externals to get off-processor values of x
@@ -43,16 +43,35 @@ using namespace std;
   @see ComputeSPMV_ref
 */
 
+// int ComputeSPMV_FPGA(const SparseMatrix & A, Vector & x, Vector & y){
+//   for(unsigned long i = 0; i < A.localNumberOfRows; i++){
+//       // sw_results[i] = 0;
+//       y.values[i] = 0;
+
+//       for(int j = 0; j < /*A.nonzerosInRow[i]*/MAXNONZEROELEMENTS; j++){
+
+//           //hw_results[i] += m[j+MAXNONZEROELEMENTS*i]*x[j+MAXNONZEROELEMENTS*i];
+//           //cout<<i<<" "<<m[j+ROW_LEN*i]<<"*"<<x[j+ROW_LEN*i]<<endl;
+//           //std::cout<<m[j+MAXNONZEROELEMENTS*i]<<std::endl;
+//           // std::cout<<j<<std::endl;
+//           y.values[i] +=  A.flat_matrixValues[j+MAXNONZEROELEMENTS*i]*x.val_spmv[j+MAXNONZEROELEMENTS*i];
+//       }
+//       // std::cout<<i<<std::endl;
+//   }
+//   return 0;
+// }
+
+
 
 int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y) {
 
   // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
-  
   // FlattenMatrix(A,  27);
 #ifndef FPGA
   A.isSpmvOptimized = true;
-  //ComputeSPMV_FPGA(A.nonzerosInRow,A.flat_mtxIndL,A.flat_matrixValues,x.values,y.values,A.localNumberOfRows);
-  return ComputeSPMV_FPGA(A, x, y);
+  prepareVector(x,A,27);
+  return ComputeSPMV_FPGA(A, A.flat_matrixValues, x, y);
+  //return ComputeSPMV_FPGA(A,A.flat_matrixValues, A.flat_mtxIndL, x, y);
 #else
   A.isSpmvOptimized = false;
   return ComputeSPMV_ref(A, x, y);

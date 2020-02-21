@@ -7,7 +7,7 @@
 #include <chrono>
 #include <cblas.h>
 
-#define MAXNONZEROELEMENTS 32
+#define MAXNONZEROELEMENTS 27
 
 #define NOW std::chrono::high_resolution_clock::now()
 
@@ -39,24 +39,22 @@
 
 
 ////////////////////RESET FUNCTION//////////////////////////////////
-int reset(synt_type *m, synt_type *x, synt_type *sw_results, synt_type *hw_results, unsigned long size) {
+int reset(synt_type *m, synt_type *x, synt_type *hw_results, synt_type *m_v, Vector & x_v, unsigned long size) {
     //Fill the input vectors with data
-    
+    // std::cout<<"IN RESET"<<std::endl;
 
     for (unsigned long i = 0; i < size*MAXNONZEROELEMENTS; i++) {
-        m[i] = LOW + static_cast <synt_type> (rand()) /( static_cast <synt_type> (RAND_MAX/(HIGH-LOW)));
-        x[i] = LOW + static_cast <synt_type> (rand()) /( static_cast <synt_type> (RAND_MAX/(HIGH-LOW)));
+        m[i] = m_v[i];//LOW + static_cast <synt_type> (rand()) /( static_cast <synt_type> (RAND_MAX/(HIGH-LOW)));
+        x[i] = x_v.val_spmv[i];//x_v.val_spmv[i];//LOW + static_cast <synt_type> (rand()) /( static_cast <synt_type> (RAND_MAX/(HIGH-LOW)));
+        // std::cout<<A.flat_matrixValues[i]<<std::endl;
+        
+        // std::cout<<i<<std::endl;
     }
     for(unsigned long i = 0; i < size; i++){
-        sw_results[i] = 0;
+        // sw_results[i] = 0;
         hw_results[i] = 0;
-        for(int j = 0; j < MAXNONZEROELEMENTS; j++){
-
-            sw_results[i] += m[j+MAXNONZEROELEMENTS*i]*x[j+MAXNONZEROELEMENTS*i];
-            //cout<<i<<" "<<m[j+ROW_LEN*i]<<"*"<<x[j+ROW_LEN*i]<<endl;
-        }
     }
-
+    // std::cout<<";-D"<<std::endl;
 
 
     return 0;
@@ -64,7 +62,7 @@ int reset(synt_type *m, synt_type *x, synt_type *sw_results, synt_type *hw_resul
 
 //int main(int argc, char *argv[]) {//change here for the function
     
-int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y){
+int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector & y){
     // if (xcl::is_hw_emulation()) {
     //     size = 16; // 4KB for HW emulation
     // } else if (xcl::is_emulation()) {
@@ -74,21 +72,38 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y){
     assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
     assert(y.localLength>=A.localNumberOfRows);
 
-    unsigned long size = A.localNumberOfRows;
+
+    unsigned size = A.localNumberOfRows;
+
+    // for(unsigned long i = 0; i < A.localNumberOfRows; i++){
+    //   // sw_results[i] = 0;
+    //     y.values[i] = 0;
+
+    //     for(int j = 0; j < /*A.nonzerosInRow[i]*/MAXNONZEROELEMENTS; j++){
+
+    //     //hw_results[i] += m[j+MAXNONZEROELEMENTS*i]*x[j+MAXNONZEROELEMENTS*i];
+    //     //cout<<i<<" "<<m[j+ROW_LEN*i]<<"*"<<x[j+ROW_LEN*i]<<endl;
+    //     //std::cout<<m[j+MAXNONZEROELEMENTS*i]<<std::endl;
+    //     // std::cout<<j<<std::endl;
+    //         y.values[i] +=  m_v[j+MAXNONZEROELEMENTS*i]*x.val_spmv[j+MAXNONZEROELEMENTS*i];
+    //     }
+    //   // std::cout<<i<<std::endl;
+    // }
+  
+
 
     // I/O Data Vectors
     std::vector<synt_type, aligned_allocator<synt_type>> h_m(MAXNONZEROELEMENTS * size);//same size for testing convenience
     std::vector<synt_type, aligned_allocator<synt_type>> h_x(MAXNONZEROELEMENTS * size);
     std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size);
-    std::vector<synt_type> sw_results(size);
+    // std::vector<synt_type> sw_results(size);
 
-
-
+    // std::cout<<"CREATED"<<std::endl;
     auto binaryFile = "../bitstreams/hw/spmv.xclbin";
 
     // Reset the data vectors
-    reset(h_m.data(), h_x.data(), sw_results.data(), hw_results.data(), size);
-
+    reset(h_m.data(), h_x.data(), hw_results.data(), m_v, x, size);
+    // std::cout<<"OK"<<std::endl;
     // OpenCL Setup
     // OpenCL objects
     cl::Device device;
@@ -131,7 +146,7 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y){
             break; // we break because we found a valid device
         }
     }
-    
+
     if (valid_device == 0) {
         std::cout << "Failed to program any device found, exit!\n";
         exit(EXIT_FAILURE);
@@ -225,15 +240,16 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y){
     // Blocking API, waits for 3 poll request completion or 50000ms, whichever occurs first.
 
     // auto t2 = NOW;
+    // std::cout<<"DONE"<<std::endl;
 
-    for (auto i=0; i<STREAMS; ++i) {
-        if(nb_rd_req.priv_data == poll_req[i].priv_data) { // Identifying the read transfer
+    // for (auto i=0; i<STREAMS; ++i) {
+    //     if(nb_rd_req.priv_data == poll_req[i].priv_data) { // Identifying the read transfer
 
-            //Getting read size, data size from kernel is unknown
-            ssize_t result_size=poll_req[i].nbytes;
-            std::cout << "RESULT SIZE " << result_size << std::endl;
-        }
-    }
+    //         //Getting read size, data size from kernel is unknown
+    //         ssize_t result_size=poll_req[i].nbytes;
+    //         std::cout << "RESULT SIZE " << result_size << std::endl;
+    //     }
+    // }
 
 
     // Ensuring all OpenCL objects are released.
@@ -243,6 +259,9 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y){
     xcl::Stream::releaseStream(write_stream_m);
     xcl::Stream::releaseStream(write_stream_x);
     
+    for(unsigned i = 0; i < A.localNumberOfRows; i++)
+        y.values[i]=hw_results[i];
+    // std::cout<<"OK2"<<std::endl;
     return 0;
 
 }

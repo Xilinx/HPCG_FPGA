@@ -12,9 +12,9 @@
 #ifndef COMPUTESPMV_FPGA_HPP
 #define COMPUTESPMV_FPGA_HPP
 #include "Vector.hpp"
-#include "common.h"
 #include "SparseMatrix.hpp"
+#include "common.h"
 
-int ComputeSPMV_FPGA( const SparseMatrix & A, Vector & x, Vector & y);
+int ComputeSPMV_FPGA(const SparseMatrix & A, synt_type *m_v, Vector & x, Vector & y);
 
 #endif // COMPUTESPMV_FPGA_HPP
