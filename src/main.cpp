@@ -162,12 +162,7 @@ int main(int argc, char * argv[]) {
 
   CGData data;
   InitializeSparseCGData(A, data);
-
-  for(int i = 0; i < A.localNumberOfRows; i++){
-    for (int j = 0; j < 27; j++)
-      std::cout << A.mtxIndL[i][j] << std::endl;
-  }
-
+  
   ////////////////////////////////////
   // Reference SpMV+MG Timing Phase //
   ////////////////////////////////////
@@ -264,7 +259,7 @@ int main(int argc, char * argv[]) {
 #endif
   std::cout<<"################################################"<<std::endl;
 
-  FlattenMatrix(A,  27);//we suppose that the number of nonzero values in a row is always 27`
+  // FlattenMatrix(A,  27);//we suppose that the number of nonzero values in a row is always 27`
 
 
 #ifdef HPCG_DEBUG
