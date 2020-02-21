@@ -1,5 +1,5 @@
-#ifndef FLATTENMATRIX_HPP
-#define FLATTENMATRIX_HPP
+#ifndef PREPAREVECTOR_HPP
+#define PREPAREVECTOR_HPP
 
 #ifndef HPCG_NOMPI
 #include <mpi.h>
@@ -15,9 +15,9 @@ using std::endl;
 #include "hpcg.hpp"
 #endif
 
+#include "Vector.hpp"
 #include "SparseMatrix.hpp"
 
+void prepareVector(Vector &x,const SparseMatrix & A, int nonzero);
 
-void FlattenMatrix(SparseMatrix &A, int numberOfNonzerosPerRow);
-
-#endif // FLATTENMATRIX_HPP
+#endif // PREPAREVECTOR_HPP
