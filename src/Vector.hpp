@@ -27,6 +27,7 @@
 struct Vector_STRUCT {
   local_int_t localLength;  //!< length of local portion of the vector
   double * values;          //!< array of values
+  double * val_spmv;
   /*!
    This is for storing optimized data structures created in OptimizeProblem and
    used inside optimized ComputeSPMV().
@@ -108,6 +109,7 @@ inline void CopyVector(const Vector & v, Vector & w) {
 inline void DeleteVector(Vector & v) {
 
   delete [] v.values;
+  // delete [] v.val_spmv;
   v.localLength = 0;
   return;
 }

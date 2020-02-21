@@ -46,6 +46,7 @@ CXXFLAGS += -Wno-long-long -DHPCG_DEBUG
 
 HPCG_DEPS = src/xcl2.o \
 		 src/FlattenMatrix.o \
+		 src/PrepareVector.o \
 		 src/CG.o \
 		 src/CG_ref.o \
 		 src/TestCG.o \
@@ -72,8 +73,8 @@ HPCG_DEPS = src/xcl2.o \
 		 src/mytimer.o \
 		 src/ComputeOptimalShapeXYZ.o \
 		 src/ComputeSPMV.o \
-		 src/ComputeSPMV_ref.o \
 		 src/ComputeSPMV_FPGA.o \
+		 src/ComputeSPMV_ref.o \
 		 src/ComputeSYMGS.o \
 		 src/ComputeSYMGS_ref.o \
 		 src/ComputeWAXPBY.o \
@@ -233,10 +234,13 @@ src/ComputeWAXPBY_FPGA.o: src/ComputeWAXPBY_FPGA.cpp src/ComputeWAXPBY_FPGA.hpp 
 src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
+src/FlattenMatrix.o: src/FlattenMatrix.cpp src/FlattenMatrix.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
+
 src/ComputeSPMV_FPGA.o: src/ComputeSPMV_FPGA.cpp src/ComputeSPMV_FPGA.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
-src/FlattenMatrix.o: src/FlattenMatrix.cpp src/FlattenMatrix.hpp $(PRIMARY_HEADERS)
+src/PrepareVector.o: src/PrepareVector.cpp src/PrepareVector.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 
