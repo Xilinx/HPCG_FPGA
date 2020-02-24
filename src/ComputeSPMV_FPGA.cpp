@@ -6,8 +6,11 @@
 #include <vector>
 #include <chrono>
 #include <cblas.h>
+#include "Vector.hpp"
+#include "SparseMatrix.hpp"
+#include "common.h"
 
-#define MAXNONZEROELEMENTS 27
+#define MAXNONZEROELEMENTS 32
 
 #define NOW std::chrono::high_resolution_clock::now()
 
@@ -60,8 +63,7 @@ int reset(synt_type *m, synt_type *x, synt_type *hw_results, synt_type *m_v, Vec
     return 0;
 }
 
-//int main(int argc, char *argv[]) {//change here for the function
-    
+
 int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector & y){
     // if (xcl::is_hw_emulation()) {
     //     size = 16; // 4KB for HW emulation
@@ -75,23 +77,6 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
 
     unsigned size = A.localNumberOfRows;
 
-    // for(unsigned long i = 0; i < A.localNumberOfRows; i++){
-    //   // sw_results[i] = 0;
-    //     y.values[i] = 0;
-
-    //     for(int j = 0; j < /*A.nonzerosInRow[i]*/MAXNONZEROELEMENTS; j++){
-
-    //     //hw_results[i] += m[j+MAXNONZEROELEMENTS*i]*x[j+MAXNONZEROELEMENTS*i];
-    //     //cout<<i<<" "<<m[j+ROW_LEN*i]<<"*"<<x[j+ROW_LEN*i]<<endl;
-    //     //std::cout<<m[j+MAXNONZEROELEMENTS*i]<<std::endl;
-    //     // std::cout<<j<<std::endl;
-    //         y.values[i] +=  m_v[j+MAXNONZEROELEMENTS*i]*x.val_spmv[j+MAXNONZEROELEMENTS*i];
-    //     }
-    //   // std::cout<<i<<std::endl;
-    // }
-  
-
-
     // I/O Data Vectors
     std::vector<synt_type, aligned_allocator<synt_type>> h_m(MAXNONZEROELEMENTS * size);//same size for testing convenience
     std::vector<synt_type, aligned_allocator<synt_type>> h_x(MAXNONZEROELEMENTS * size);
@@ -101,8 +86,11 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     // std::cout<<"CREATED"<<std::endl;
     auto binaryFile = "../bitstreams/hw/spmv.xclbin";
 
+
     // Reset the data vectors
     reset(h_m.data(), h_x.data(), hw_results.data(), m_v, x, size);
+
+    // std::cout << size << std::endl;
     // std::cout<<"OK"<<std::endl;
     // OpenCL Setup
     // OpenCL objects
