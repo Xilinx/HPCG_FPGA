@@ -1,11 +1,11 @@
 #ifndef FLATTENMATRIX_HPP
 #define FLATTENMATRIX_HPP
 
-#ifndef HPCG_NOMPI
+#ifndef HPCG_NO_MPI
 #include <mpi.h>
 #endif
 
-#ifndef HPCG_NOOPENMP
+#ifndef HPCG_NO_OPENMP
 #include <omp.h>
 #endif
 
