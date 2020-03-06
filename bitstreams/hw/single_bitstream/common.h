@@ -11,7 +11,6 @@
 //#define VECTOR_LENGTH 10000000//100000000 
 //#define BUFFERED_BLOCKS 1
 
-#define KERNEL_NAME "spmv"
 #define TYPE DOUBLE
 #define STREAMS 3
 
