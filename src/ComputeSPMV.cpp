@@ -22,7 +22,7 @@
 #include "ComputeSPMV_ref.hpp"
 #include "ComputeSPMV_FPGA.hpp"
 #include "PrepareVector.hpp"
- #define MAXNONZEROELEMENTS 32
+#define MAXNONZEROELEMENTS 32
 #include <iostream>
 
 // using namespace std;
@@ -67,7 +67,7 @@ int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y) {
 
   // This line and the next two lines should be removed and your version of ComputeSPMV should be used.
   // FlattenMatrix(A,  27);
-#ifndef FPGA
+#ifdef FPGA
   A.isSpmvOptimized = true;
   prepareVector(x,A,27);
   return ComputeSPMV_FPGA(A, A.flat_matrixValues, x, y);

@@ -5,7 +5,6 @@
 #include <unistd.h>
 #include <vector>
 #include <chrono>
-#include <cblas.h>
 #include "Vector.hpp"
 #include "SparseMatrix.hpp"
 #include "common.h"
