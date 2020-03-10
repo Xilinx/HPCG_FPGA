@@ -69,7 +69,7 @@ int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y) {
   // FlattenMatrix(A,  27);
 #ifdef FPGA
   A.isSpmvOptimized = true;
-  prepareVector(x,A,27);
+  // prepareVector(x,A,27);
   return ComputeSPMV_FPGA(A, A.flat_matrixValues, x, y);
   //return ComputeSPMV_FPGA(A,A.flat_matrixValues, A.flat_mtxIndL, x, y);
 #else
