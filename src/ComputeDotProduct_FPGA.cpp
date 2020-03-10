@@ -24,18 +24,12 @@
 #include <omp.h>
 #endif
 
-// decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
-// decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
-// decltype(&clReadStream) xcl::Stream::readStream = nullptr;
-// decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
-// decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
-
 int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector & y,
     double & result, double & time_allreduce){
 
 	unsigned long size = n;
 
-	auto binaryFile = "../bitstreams/hw/vecdotprod.xclbin";
+    auto binaryFile = "../bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201920_1/cg.xclbin";
 
 	std::vector<synt_type, aligned_allocator<synt_type>> h_a(size);
     std::vector<synt_type, aligned_allocator<synt_type>> h_b(size);
