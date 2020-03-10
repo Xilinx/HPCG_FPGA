@@ -32,14 +32,6 @@
 #include <cassert>
 #include <iostream>
 
-// Declaration of custom stream APIs that binds to Xilinx Streaming APIs.
-// decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
-// decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
-// decltype(&clReadStream) xcl::Stream::readStream = nullptr;
-// decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
-// decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
-
-
 ////////////////////RESET FUNCTION//////////////////////////////////
 int reset(synt_type *m, synt_type *x, synt_type *hw_results, synt_type *m_v, Vector & x_v, unsigned long size) {
     //Fill the input vectors with data
@@ -52,23 +44,12 @@ int reset(synt_type *m, synt_type *x, synt_type *hw_results, synt_type *m_v, Vec
         
         // std::cout<<i<<std::endl;
     }
-    for(unsigned long i = 0; i < size; i++){
-        // sw_results[i] = 0;
-        hw_results[i] = 0;
-    }
-    // std::cout<<";-D"<<std::endl;
-
 
     return 0;
 }
 
 
 int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector & y){
-    // if (xcl::is_hw_emulation()) {
-    //     size = 16; // 4KB for HW emulation
-    // } else if (xcl::is_emulation()) {
-    //     size = 16; // 4MB for sw emulation
-    // }
 
     assert(x.localLength>=A.localNumberOfColumns); // Test vector lengths
     assert(y.localLength>=A.localNumberOfRows);
@@ -79,18 +60,14 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     // I/O Data Vectors
     std::vector<synt_type, aligned_allocator<synt_type>> h_m(MAXNONZEROELEMENTS * size);//same size for testing convenience
     std::vector<synt_type, aligned_allocator<synt_type>> h_x(MAXNONZEROELEMENTS * size);
-    std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size);
-    // std::vector<synt_type> sw_results(size);
-
-    // std::cout<<"CREATED"<<std::endl;
-    auto binaryFile = "../bitstreams/hw/spmv.xclbin";
+    std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size,0);
+    
+    auto binaryFile = "../bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201920_1/cg.xclbin";
 
 
     // Reset the data vectors
     reset(h_m.data(), h_x.data(), hw_results.data(), m_v, x, size);
 
-    // std::cout << size << std::endl;
-    // std::cout<<"OK"<<std::endl;
     // OpenCL Setup
     // OpenCL objects
     cl::Device device;
@@ -175,15 +152,6 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     int s = size;
     OCL_CHECK(err, err = krnl.setArg(3, s));
 
-    // std::cout
-    //     << "############################################################\n";
-    // std::cout
-    //     << "                  Non-Blocking Stream                       \n";
-    // std::cout
-    //     << "############################################################\n";
-    // std::cout<<"HW input"<<std::endl;
-    // Launch the Kernel
-    // auto t1 = NOW;
     cl::Event nb_wait_event;
     OCL_CHECK(err, err = q.enqueueTask(krnl, NULL, &nb_wait_event));
 
@@ -224,20 +192,6 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     OCL_CHECK(ret,
               xcl::Stream::pollStreams(
                   device.get(), poll_req, 3, 3, &num_compl, 500000, &ret));
-    // Blocking API, waits for 3 poll request completion or 50000ms, whichever occurs first.
-
-    // auto t2 = NOW;
-    // std::cout<<"DONE"<<std::endl;
-
-    // for (auto i=0; i<STREAMS; ++i) {
-    //     if(nb_rd_req.priv_data == poll_req[i].priv_data) { // Identifying the read transfer
-
-    //         //Getting read size, data size from kernel is unknown
-    //         ssize_t result_size=poll_req[i].nbytes;
-    //         std::cout << "RESULT SIZE " << result_size << std::endl;
-    //     }
-    // }
-
 
     // Ensuring all OpenCL objects are released.
     q.finish();
@@ -248,7 +202,7 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     
     for(unsigned i = 0; i < A.localNumberOfRows; i++)
         y.values[i]=hw_results[i];
-    // std::cout<<"OK2"<<std::endl;
+    
     return 0;
 
 }

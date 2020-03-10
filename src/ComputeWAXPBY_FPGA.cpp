@@ -24,12 +24,6 @@
 #include <omp.h>
 #endif
 
-// decltype(&clCreateStream) xcl::Stream::createStream = nullptr;
-// decltype(&clReleaseStream) xcl::Stream::releaseStream = nullptr;
-// decltype(&clReadStream) xcl::Stream::readStream = nullptr;
-// decltype(&clWriteStream) xcl::Stream::writeStream = nullptr;
-// decltype(&clPollStreams) xcl::Stream::pollStreams = nullptr;
-
 int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x,
     const double beta, const Vector & y, Vector & w) {
 
@@ -38,16 +32,15 @@ int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x
 
   	unsigned long size = n;
 
-	auto binaryFile = "../bitstreams/hw/vecsumprod.xclbin";
+	auto binaryFile = "../bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201920_1/cg.xclbin";
 
   	std::vector<synt_type, aligned_allocator<synt_type>> h_a(size);
     std::vector<synt_type, aligned_allocator<synt_type>> h_b(size);
-    std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size);
+    std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size,0);
     // synt_type alpha,beta;
     for(unsigned int i = 0; i < size; i++){
     	h_a[i] = x.values[i];
     	h_b[i] = y.values[i];
-    	hw_results[i]=0;
     }
 
     // OpenCL Setup
