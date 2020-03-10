@@ -11,7 +11,8 @@ bitstreams/hw/single_bitstream/*
 !bitstreams/hw/single_bitstream/common.h
 !bitstreams/hw/single_bitstream/utils.mk
 !bitstreams/hw/single_bitstream/vecsumprod.cpp
-!bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201910_1/cg.xclbin 
+!bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201920_1/cg.xclbin
+
 !bitstreams/hw/single_bitstream/Makefile
 bin/*
 
