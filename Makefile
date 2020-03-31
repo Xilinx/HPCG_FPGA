@@ -23,7 +23,7 @@ CXXFLAGSFPGA += $(xcl2_CXXFLAGS)
 LDFLAGS += $(xcl2_LDFLAGS)
 HOST_SRCS += $(xcl2_SRCS)
 CXXFLAGSFPGA += -pthread
-CXXFLAGSFPGA += $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11 
+CXXFLAGSFPGA += $(opencl_CXXFLAGS) -Wall -O3 -std=c++11 
 LDFLAGS += $(opencl_LDFLAGS) 
 
 # HOST_SRCS += host.cpp 
@@ -81,6 +81,7 @@ HPCG_DEPS = src/xcl2.o \
 		 src/ComputeWAXPBY_ref.o \
 		 src/ComputeWAXPBY_FPGA.o \
 		 src/ComputeMG_ref.o \
+		 src/ComputeMG_FPGA.o \
 		 src/ComputeMG.o \
 		 src/ComputeProlongation_ref.o \
 		 src/ComputeRestriction_ref.o \
@@ -243,4 +244,6 @@ src/ComputeSPMV_FPGA.o: src/ComputeSPMV_FPGA.cpp src/ComputeSPMV_FPGA.hpp $(PRIM
 src/PrepareVector.o: src/PrepareVector.cpp src/PrepareVector.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
+src/ComputeMG_FPGA.o: src/ComputeMG_FPGA.cpp src/ComputeMG_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
