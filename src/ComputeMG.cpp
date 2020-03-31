@@ -20,6 +20,8 @@
 
 #include "ComputeMG.hpp"
 #include "ComputeMG_ref.hpp"
+#include "ComputeMG_FPGA.hpp"
+#include <iostream>
 
 /*!
   @param[in] A the known system matrix
@@ -33,6 +35,11 @@
 int ComputeMG(const SparseMatrix  & A, const Vector & r, Vector & x) {
 
   // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
+#ifdef FPGA
+  A.isMgOptimized = true;
+  return ComputeMG_FPGA(A, r, x);
+#else
   A.isMgOptimized = false;
   return ComputeMG_ref(A, r, x);
+#endif
 }
