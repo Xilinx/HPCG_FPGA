@@ -36,7 +36,6 @@ using std::endl;
 #include <vector>
 
 #include "hpcg.hpp"
-
 #include "CheckAspectRatio.hpp"
 #include "GenerateGeometry.hpp"
 #include "GenerateProblem.hpp"
@@ -53,6 +52,7 @@ using std::endl;
 #include "ComputeResidual.hpp"
 #include "CG.hpp"
 #include "CG_ref.hpp"
+#include "CG_FPGA_stream.hpp"
 #include "Geometry.hpp"
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
@@ -259,15 +259,13 @@ int main(int argc, char * argv[]) {
 #endif
   std::cout<<"################################################"<<std::endl;
 
-  // FlattenMatrix(A,  27);//we suppose that the number of nonzero values in a row is always 27`
-
 
 #ifdef HPCG_DEBUG
   t1 = mytimer();
 #endif
   TestCGData testcg_data;
   testcg_data.count_pass = testcg_data.count_fail = 0;
-  TestCG(A, data, b, x, testcg_data);
+  TestCG(A, data, b, x, testcg_data);//Flatten matrix is in here, if we need to take it out
 
   TestSymmetryData testsymmetry_data;
   TestSymmetry(A, b, xexact, testsymmetry_data);
@@ -360,7 +358,13 @@ int main(int argc, char * argv[]) {
 
   for (int i=0; i< numberOfCgSets; ++i) {
     ZeroVector(x); // Zero out x
+    //Use an optimize version of the host to exploit the best performance out of the kernels
+#ifdef FPGA
+    ierr = CG_FPGA_stream( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
+#else
     ierr = CG( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
+#endif
+
     if (ierr) HPCG_fout << "Error in call to CG: " << ierr << ".\n" << endl;
     if (rank==0) HPCG_fout << "Call [" << i << "] Scaled Residual [" << normr/normr0 << "]" << endl;
     testnorms_data.values[i] = normr/normr0; // Record scaled residual from this run
