@@ -40,7 +40,7 @@ BINARY_CONTAINERS += $(BUILD_DIR)/vecdotprod.xclbin
 BINARY_CONTAINER_vecdotprod_OBJS += $(TEMP_DIR)/vecdotprod.xo
 
 CP = cp -rf
-CXXFLAGS += -Wno-long-long -DHPCG_DEBUG
+CXXFLAGS += -Wno-long-long 
 # FPGA_HOST_FLAGS = $(xcl2_CXXFLAGS) -pthread $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11 -fmessage-length=0
 # LDFLAGS += $(xcl2_LDFLAGS) $(opencl_LDFLAGS) -lrt -lstdc++ --sysroot=$(SYSROOT)
 
@@ -70,6 +70,7 @@ HPCG_DEPS = src/xcl2.o \
 		 src/ComputeDotProduct.o \
 		 src/ComputeDotProduct_ref.o \
 		 src/ComputeDotProduct_FPGA.o \
+		 src/CG_FPGA_stream.o \
 		 src/mytimer.o \
 		 src/ComputeOptimalShapeXYZ.o \
 		 src/ComputeSPMV.o \
@@ -102,7 +103,6 @@ bin/xhpcg: src/main.o $(HPCG_DEPS)
 
 clean:
 	rm -f src/*.o bin/xhpcg
-	rm -f bin/*.txt
 
 .PHONY: all clean
 
@@ -245,5 +245,8 @@ src/PrepareVector.o: src/PrepareVector.cpp src/PrepareVector.hpp $(PRIMARY_HEADE
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/ComputeMG_FPGA.o: src/ComputeMG_FPGA.cpp src/ComputeMG_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+
+src/CG_FPGA_stream.o: src/CG_FPGA_stream.cpp src/CG_FPGA_stream.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
 
