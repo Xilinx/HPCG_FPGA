@@ -12,6 +12,9 @@ help::
 	$(ECHO) "  make cleanall"
 	$(ECHO) "      Command to remove all the generated files."
 	$(ECHO) ""
+	$(ECHO)  "  make test DEVICE=<FPGA platform>"
+	$(ECHO)  "     Command to run the application. This is same as 'check' target but does not have any makefile dependency."
+	$(ECHO)  ""
 	$(ECHO) "  make sd_card TARGET=<sw_emu/hw_emu/hw> DEVICE=<FPGA platform> HOST_ARCH=<aarch32/aarch64/x86> SYSROOT=<sysroot_path>"
 	$(ECHO) "      Command to prepare sd_card files."
 	$(ECHO) "      By default, HOST_ARCH=x86. HOST_ARCH and SYSROOT is required for SoC shells"
@@ -33,7 +36,7 @@ ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 TARGET := hw
 HOST_ARCH := x86
 SYSROOT := 
-DEVICE = /proj/xbuilds/2020.1_daily_latest/internal_platforms/xilinx_u250_qdma_201920_1/xilinx_u250_qdma_201920_1.xpfm 
+DEVICE = /proj/xbuilds/2019.2_daily_latest/internal_platforms/xilinx_u280_xdma_201920_3/xilinx_u280_xdma_201920_3.xpfm
 
 include ./utils.mk
 
@@ -50,11 +53,11 @@ include $(ABS_COMMON_REPO)/common/includes/xcl2/xcl2.mk
 CXXFLAGS += $(xcl2_CXXFLAGS)
 LDFLAGS += $(xcl2_LDFLAGS)
 HOST_SRCS += $(xcl2_SRCS)
-CXXFLAGS += -pthread -fopenmp
 CXXFLAGS += $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11
-LDFLAGS += $(opencl_LDFLAGS) -lopenblas
+LDFLAGS += $(opencl_LDFLAGS)
 
-HOST_SRCS += host.cpp 
+HOST_SRCS += src/host.cpp
+
 # Host compiler global settings
 CXXFLAGS += -fmessage-length=0
 LDFLAGS += -lrt -lstdc++ 
@@ -64,22 +67,25 @@ ifneq ($(HOST_ARCH), x86)
 endif
 
 # Kernel compiler global settings
-CLFLAGS += -t $(TARGET) --platform $(DEVICE) --save-temps
+CLFLAGS += -t $(TARGET) --platform $(DEVICE) --save-temps 
 ifneq ($(TARGET), hw)
 	CLFLAGS += -g
 endif
 
 
 
+# Adding config files to linker
+LDCLFLAGS += --config waxpby.ini 
 EXECUTABLE = host
-CMD_ARGS = $(BUILD_DIR)/cg.xclbin
+CMD_ARGS = $(BUILD_DIR)/waxpby.xclbin
 EMCONFIG_DIR = $(TEMP_DIR)
 EMU_DIR = $(SDCARD)/data/emulation
 
-BINARY_CONTAINERS += $(BUILD_DIR)/cg.xclbin
-BINARY_CONTAINER_spmv_OBJS += $(TEMP_DIR)/spmv.xo  $(TEMP_DIR)/vecdotprod.xo $(TEMP_DIR)/vecsumprod.xo
+BINARY_CONTAINERS += $(BUILD_DIR)/waxpby.xclbin
+BINARY_CONTAINER_waxpby_OBJS += $(TEMP_DIR)/waxpby.xo
 
-KERNEL_ADDITIONAL_FLAGS=--kernel_frequency 300 
+# Setting higher frequency to achieve higher bandwidth
+CLFLAGS+=--kernel_frequency 450
 
 CP = cp -rf
 
@@ -93,21 +99,12 @@ exe: $(EXECUTABLE)
 build: $(BINARY_CONTAINERS)
 
 # Building kernel
-$(TEMP_DIR)/vecdotprod.xo: vecdotprod.cpp
+$(TEMP_DIR)/waxpby.xo: src/waxpby.cpp
 	mkdir -p $(TEMP_DIR)
-	$(VPP) $(CLFLAGS) $(KERNEL_ADDITIONAL_FLAGS) --temp_dir $(TEMP_DIR) -c -k vecdotprod -I'$(<D)' -o'$@' '$<'
-
-$(TEMP_DIR)/vecsumprod.xo: vecsumprod.cpp
-	mkdir -p $(TEMP_DIR)
-	$(VPP) $(CLFLAGS) $(KERNEL_ADDITIONAL_FLAGS) --temp_dir $(TEMP_DIR) -c -k vecsumprod -I'$(<D)' -o'$@' '$<'
-
-$(TEMP_DIR)/spmv.xo: spmv.cpp
-	mkdir -p $(TEMP_DIR)
-	$(VPP) $(CLFLAGS) $(KERNEL_ADDITIONAL_FLAGS) --temp_dir $(TEMP_DIR) -c -k spmv -I'$(<D)' -o'$@' '$<'
-
-$(BUILD_DIR)/cg.xclbin: $(BINARY_CONTAINER_spmv_OBJS)
+	$(VPP) $(CLFLAGS) --temp_dir $(TEMP_DIR) -c -k waxpby -I'$(<D)' -o'$@' '$<'
+$(BUILD_DIR)/waxpby.xclbin: $(BINARY_CONTAINER_waxpby_OBJS)
 	mkdir -p $(BUILD_DIR)
-	$(VPP) $(CLFLAGS) $(KERNEL_ADDITIONAL_FLAGS) --temp_dir $(BUILD_DIR) -l $(LDCLFLAGS) -o'$@' $(+)
+	$(VPP) $(CLFLAGS) --temp_dir $(BUILD_DIR) -l $(LDCLFLAGS) -o'$@' $(+)
 
 # Building Host
 $(EXECUTABLE): check-xrt $(HOST_SRCS) $(HOST_HDRS)
@@ -118,23 +115,29 @@ $(EMCONFIG_DIR)/emconfig.json:
 	emconfigutil --platform $(DEVICE) --od $(EMCONFIG_DIR)
 
 check: all
+ifeq ($(findstring u200, $(DEVICE)), u200)
+$(error This kernel is not supported for $(DEVICE))
+endif
 ifeq ($(findstring zc, $(DEVICE)), zc)
-$(error This example is not supported for $(DEVICE))
+$(error This kernel is not supported for $(DEVICE))
 endif
-ifeq ($(findstring xdma, $(DEVICE)), xdma)
-$(error This example is not supported for $(DEVICE))
+ifeq ($(findstring vck, $(DEVICE)), vck)
+$(error This kernel is not supported for $(DEVICE))
 endif
-ifeq ($(findstring xilinx_u250_qep, $(DEVICE)), xilinx_u250_qep)
-$(error This example is not supported for $(DEVICE))
+ifeq ($(findstring u250, $(DEVICE)), u250)
+$(error This kernel is not supported for $(DEVICE))
+endif
+ifeq ($(findstring aws, $(DEVICE)), aws)
+$(error This kernel is not supported for $(DEVICE))
 endif
 ifeq ($(findstring samsung, $(DEVICE)), samsung)
-$(error This example is not supported for $(DEVICE))
+$(error This kernel is not supported for $(DEVICE))
 endif
 
 ifeq ($(TARGET),$(filter $(TARGET),sw_emu hw_emu))
 ifeq ($(HOST_ARCH), x86)
 	$(CP) $(EMCONFIG_DIR)/emconfig.json .
-	XCL_EMULATION_MODE=$(TARGET) ./$(EXECUTABLE) $(BUILD_DIR)/cg.xclbin 16
+	XCL_EMULATION_MODE=$(TARGET) ./$(EXECUTABLE) $(BUILD_DIR)/waxpby.xclbin
 else
 	mkdir -p $(EMU_DIR)
 	$(CP) $(XILINX_VITIS)/data/emulation/unified $(EMU_DIR)
@@ -143,12 +146,29 @@ else
 endif
 else
 ifeq ($(HOST_ARCH), x86)
-	./$(EXECUTABLE) $(BUILD_DIR)/cg.xclbin
+	./$(EXECUTABLE) $(BUILD_DIR)/waxpby.xclbin
 endif
 endif
+
+.PHONY: test
+test: $(EXECUTABLE)
+ifeq ($(TARGET),$(filter $(TARGET),sw_emu hw_emu))
 ifeq ($(HOST_ARCH), x86)
-	perf_analyze profile -i profile_summary.csv -f html
+	XCL_EMULATION_MODE=$(TARGET) ./$(EXECUTABLE) $(BUILD_DIR)/waxpby.xclbin
+else
+	mkdir -p $(EMU_DIR)
+	$(CP) $(XILINX_VITIS)/data/emulation/unified $(EMU_DIR)
+	mkfatimg $(SDCARD) $(SDCARD).img 500000
+	launch_emulator -no-reboot -runtime ocl -t $(TARGET) -sd-card-image $(SDCARD).img -device-family $(DEV_FAM)
 endif
+else
+ifeq ($(HOST_ARCH), x86)
+	./$(EXECUTABLE) $(BUILD_DIR)/waxpby.xclbin
+else
+	$(ECHO) "Please copy the content of sd_card folder and data to an SD Card and run on the board"
+endif
+endif
+
 
 sd_card: $(EXECUTABLE) $(BINARY_CONTAINERS) emconfig
 ifneq ($(HOST_ARCH), x86)
@@ -163,6 +183,7 @@ ifeq ($(TARGET),$(filter $(TARGET),sw_emu hw_emu))
 	$(ECHO) 'reboot' >> $(SDCARD)/init.sh
 else
 	[ -f $(SDCARD)/BOOT.BIN ] && echo "INFO: BOOT.BIN already exists" || $(CP) $(BUILD_DIR)/sd_card/BOOT.BIN $(SDCARD)/
+	$(ECHO) 'cd /mnt/' >> $(SDCARD)/init.sh
 	$(ECHO) './$(EXECUTABLE) $(CMD_ARGS)' >> $(SDCARD)/init.sh
 endif
 endif
@@ -171,7 +192,7 @@ endif
 clean:
 	-$(RMDIR) $(EXECUTABLE) $(XCLBIN)/{*sw_emu*,*hw_emu*} 
 	-$(RMDIR) profile_* TempConfig system_estimate.xtxt *.rpt *.csv 
-	-$(RMDIR) *.ll *v++* .Xil emconfig.json dltmp* xmltmp* *.log *.jou *.wcfg *.wdb
+	-$(RMDIR) src/*.ll *v++* .Xil emconfig.json dltmp* xmltmp* *.log *.jou *.wcfg *.wdb
 
 cleanall: clean
 	-$(RMDIR) build_dir* sd_card*
