@@ -404,6 +404,7 @@ int CG_FPGA_stream(const SparseMatrix & A, CGData & data, const Vector & b, Vect
       exit(EXIT_FAILURE);
   }
 
+  std::cout << "Programmed all kernels" << std::endl;
   auto platform_id = device.getInfo<CL_DEVICE_PLATFORM>(&err);
 
   xcl::Stream::init(platform_id);
