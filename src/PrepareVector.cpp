@@ -8,6 +8,7 @@ void prepareVector(Vector &x,const SparseMatrix & A, int nonzero){
   // std::cout<<"HERE IN PREP"<<std::endl;
   int nonzeroAdjusted = ((nonzero + sizeof(synt_type) - 1 )/ sizeof(synt_type))*sizeof(synt_type);
   unsigned int arr_size = nonzeroAdjusted * A.localNumberOfRows;
+  // free(x.val_spmv);
   double *prep_v = new double[arr_size];
   // std::cout<<nonzeroAdjusted<<std::endl;
   // std::cout<<"HERE IN PREP CREATED"<<std::endl;
