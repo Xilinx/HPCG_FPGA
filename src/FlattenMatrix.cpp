@@ -8,6 +8,9 @@ void FlattenMatrix(SparseMatrix &A, int numberOfNonzerosPerRow){//numberOfNonzer
 	int locNumRows = A.localNumberOfRows;
 	int nonzeroAdjusted = ((numberOfNonzerosPerRow + sizeof(synt_type) - 1 )/ sizeof(synt_type))*sizeof(synt_type);
     int arr_size = locNumRows*nonzeroAdjusted;
+    // free(A.flat_mtxIndL);
+    // free(A.flat_matrixValues);
+    // free(A.flat_matrixDiagonal);
 	local_int_t  *flat_mtxIndL = new local_int_t[arr_size];
 	double *flat_matrixValues  = new double[arr_size];
 	double *flat_matrixDiagonal = new double[arr_size];
