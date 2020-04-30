@@ -359,11 +359,11 @@ int main(int argc, char * argv[]) {
   for (int i=0; i< numberOfCgSets; ++i) {
     ZeroVector(x); // Zero out x
     //Use an optimize version of the host to exploit the best performance out of the kernels
-#ifdef FPGA
-    ierr = CG_FPGA_stream( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
-#else
+// #ifdef FPGA
+//     ierr = CG_FPGA_stream( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
+// #else
     ierr = CG( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
-#endif
+// #endif
 
     if (ierr) HPCG_fout << "Error in call to CG: " << ierr << ".\n" << endl;
     if (rank==0) HPCG_fout << "Call [" << i << "] Scaled Residual [" << normr/normr0 << "]" << endl;
