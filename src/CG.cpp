@@ -99,7 +99,7 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
   normr0 = normr;
 
   // Start iterations
-
+ 
   for (int k=1; k<=max_iter && normr/normr0 > tolerance; k++ ) {
     TICK();
     if (doPreconditioning)
