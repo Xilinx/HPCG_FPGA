@@ -156,7 +156,7 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
     auto num_compl = 3;
     OCL_CHECK(ret,
               xcl::Stream::pollStreams(
-                  device.get(), poll_req, 3, 3, &num_compl, 500000, &ret));
+                  device.get(), poll_req, 3, 3, &num_compl, 5000000, &ret));
 
     q.finish();
     double local_result = hw_results[0];
