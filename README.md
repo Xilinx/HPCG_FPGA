@@ -1,5 +1,5 @@
 <p align="center">
-  <img width="600" height="313.5" src="https://gitenterprise.xilinx.com/albertoz/hpcg_fpga/blob/media/xilinx.jpg">
+  <img width="600" height="313.5" src="https://gitenterprise.xilinx.com/albertoz/hpcg_fpga/blob/master/media/xilinx.jpg">
 </p>
 
 # High Performance Conjugate Gradient Benchmark (HPCG) - FPGA #
