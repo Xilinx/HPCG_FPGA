@@ -49,6 +49,29 @@ All the code has been optimized for the Alveo U280 FPGA, and can be run using 1 
 
 ## Results ##
 
+Performance obtained using the **Alveo U280**, and the Intel(R) Xeon(R) Gold 6234 CPU @ 3.30GHz with various dataset sizes and different data precision.
+
+| Problem Size 	| Double GFlop/s 	| Single GFlop/s 	| Half GFlop/s 		|
+|----------:	|---------------:	|---------------:	|-----------------:	|
+|   16^3  		|   106.1			|   215.4 			|	409.4		 	|
+|   32^3  		|   107.1			|   215.7 			|	418.0		 	|
+|   64^3  		|   103.9			|   213.5 			|	430.9		 	|
+|   128^3  		|   107.2			|   217.9			|	422.3		 	|
+|   256^3  		|   108.3			|   211.3		 	|	426.6		 	|
+
+
+Performance comparison of HPCG across different platforms, using the same dataset size with different data precision.
+
+| Platform 				| Problem Size 	| Double GFlop/s 	|
+|------------------:	|----------:	|---------------:	|
+|   Intel Xeon 6234		|   256^3  		|   1.03			|
+|   NVIDIA Tesla K40 	|   256^3 		|   33.0			|
+|  	NVIDIA Tesla M40	|   256^3 		|   41.5			|
+|  	NVIDIA Tesla P100	|   256^3  		|   100.0			|
+|  	NVIDIA Tesla V100	|   256^3  		|   145.9			|
+|  **Alveo U280**		|   **256^3**	|   **108.3**		|
+
+
 ## Installation ##
 
 See the file `INSTALL` in this directory.
