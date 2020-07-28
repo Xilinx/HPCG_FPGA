@@ -191,7 +191,7 @@ int ComputeSPMV_FPGA( const SparseMatrix & A, synt_type *m_v, Vector & x, Vector
     auto num_compl = 3;
     OCL_CHECK(ret,
               xcl::Stream::pollStreams(
-                  device.get(), poll_req, 3, 3, &num_compl, 500000, &ret));
+                  device.get(), poll_req, 3, 3, &num_compl, 5000000, &ret));
 
     // Ensuring all OpenCL objects are released.
     q.finish();
