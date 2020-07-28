@@ -1,12 +1,20 @@
-########################################################
-# High Performance Conjugate Gradient Benchmark (HPCG) #
-########################################################
+<p align="center">
+  <img width="600" height="313.5" src="https://gitenterprise.xilinx.com/albertoz/hpcg_fpga/media/xilinx.jpg">
+</p>
 
-Jack Dongarra and Michael Heroux and Piotr Luszczek
 
-Revision: 3.1
 
-Date: March 28, 2019
+
+# High Performance Conjugate Gradient Benchmark (HPCG) - FPGA #
+
+
+
+
+FPGA version by Alberto Zeni and Kenneth O'Brien - Xilinx Inc.
+
+Based on HPCG:
+
+Revision: 3.1 Date: March 28, 2019
 
 ## Introduction ##
 
@@ -37,6 +45,15 @@ implementation of the  Message Passing Interface (MPI) if enabling the MPI
 build of HPCG, and a compiler that supports OpenMP syntax. An implementation
 compliant with MPI version 1.1 is sufficient.
 
+## FPGA Implementation ##
+
+The FPGA implementation of HPCG has been developed keeping the same calculations as 
+the vanilla version of HPCG implementing specific optimizations for multiple FPGA execution.
+All the source code of the optimized version of HPCG is located in the `src-fpga` directory.
+All the code has been optimized for the Alveo U280 FPGA, and can be run using 1 or multiple boards.
+
+## Results ##
+
 ## Installation ##
 
 See the file `INSTALL` in this directory.
@@ -60,26 +77,3 @@ significant fraction of *main memory*, at least 1/4 of the total.
 Future memory system architectures may require restatement of the specific memory
 size requirements.  But the guiding principle will always be that the problem
 size should reflect what would be reasonable for a real sparse iterative solver.
-
-## Documentation ##
-
-The source code documentation can be generated with a Doxygen (version 1.8 or
-newer). In this directory type:
-
-    doxygen tools/hpcg.dox
-
-Doxygen will then generate various output formats in the `out` directory.
-
-## Tuning ##
-
-See the file `TUNING` in this directory.
-
-## Bugs ##
-
-Known problems and bugs with this release are documented in the file
-`BUGS`.
-
-## Further information ##
-
-Check out  the website  http://www.hpcg-benchmark.org/ for the latest
-information and performance results.
