@@ -2,7 +2,7 @@
 out
 *.swp
 src/*.o
-
+*.xclbin
 bitstreams/hw/single_bitstream/*
 !bitstreams/hw/single_bitstream/spmv.cpp
 !bitstreams/hw/single_bitstream/common/
