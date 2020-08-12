@@ -12,5 +12,6 @@ src/*.o
 !bitstreams/hw/single_bitstream/vecsumprod.cpp
 !bitstreams/hw/single_bitstream/Makefile
 bin/*
-
+*.jpg
+*.png
 .DS_Store
