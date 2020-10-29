@@ -152,7 +152,6 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
 #endif
     niters = k;
   }
-  std::cout<< "out" <<std::endl;
   // Store times
   times[1] += t1FPGA; // dot-product time
   times[2] += t2FPGA; // WAXPBY time

@@ -65,10 +65,10 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 typedef double synt_type;
 #define VDATA_SIZE 8
 #define NON_ZERO 32
-#define PATH_TO_BINARY_SPMV "/scratch/users/albertoz/cg_final/src-fpga/double/build_dir.hw.xilinx_u280_xdma_201920_3/cg.xclbin"
-#define PATH_TO_BINARY_DP PATH_TO_BINARY_SPMV
-#define PATH_TO_BINARY_WAXPBY PATH_TO_BINARY_SPMV
-#define PATH_TO_BINARY_SYMGS PATH_TO_BINARY_SPMV
+#define PATH_TO_BINARY_SPMV "/scratch/users/albertoz/cg_final/src-fpga/double/build_dir.hw.xilinx_u280_xdma_201920_3/spmv.xclbin"
+#define PATH_TO_BINARY_DP "/scratch/users/albertoz/cg_final/src-fpga/double/build_dir.hw.xilinx_u280_xdma_201920_3/dp.xclbin"
+#define PATH_TO_BINARY_WAXPBY "/scratch/users/albertoz/cg_final/src-fpga/double/build_dir.hw.xilinx_u280_xdma_201920_3/waxpby.xclbin"
+#define PATH_TO_BINARY_SYMGS "/scratch/users/albertoz/cg_final/src-fpga/double/build_dir.hw.xilinx_u280_xdma_201920_3/symgs.xclbin"
 //
 
 //TRIPCOUNT indentifier
