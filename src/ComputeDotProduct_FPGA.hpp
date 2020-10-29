@@ -42,9 +42,9 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef COMPUTEDOTPRODUCT_FPGA_HPP
 #define COMPUTEDOTPRODUCT_FPGA_HPP
 #include "Vector.hpp"
-#include "common.h"
+#include "common.hpp"
 
 int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector & y,
-    double & result, double & time_allreduce);
+    double & result,  double & timeFPGA, double & time_allreduce);
 
 #endif // COMPUTEDOTPRODUCT_FPGA_HPP

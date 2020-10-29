@@ -17,6 +17,6 @@
 #include "Vector.hpp"
 #include "SparseMatrix.hpp"
 
-int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y);
+int ComputeSPMV( const SparseMatrix & A, Vector & x, Vector & y, double & time_FPGA);
 
 #endif  // COMPUTESPMV_HPP

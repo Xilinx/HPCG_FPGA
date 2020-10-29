@@ -33,19 +33,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
-
-/*!
- @file ComputeDotProduct.cpp
-
- HPCG routine
- */
 
 #include "ComputeDotProduct.hpp"
 #include "ComputeDotProduct_ref.hpp"
@@ -70,15 +62,15 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   @see ComputeDotProduct_ref
 */
 int ComputeDotProduct(const local_int_t n, const Vector & x, const Vector & y,
-    double & result, double & time_allreduce, bool & isOptimized) {
+    double & result, double & time_FPGA, double & time_allreduce, bool & isOptimized) {
 
 #ifdef FPGA
   isOptimized = true;
-  ComputeDotProduct_FPGA(n, x, y, result, time_allreduce);
+  ComputeDotProduct_FPGA(n, x, y, result, time_FPGA, time_allreduce);
 #else
   isOptimized = false;
   ComputeDotProduct_ref(n, x, y, result, time_allreduce);
 #endif
-  
+
   return 0;
 }

@@ -33,19 +33,11 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
-
-/*!
- @file ComputeWAXPBY.cpp
-
- HPCG routine
- */
 
 #include "ComputeWAXPBY.hpp"
 #include "ComputeWAXPBY_ref.hpp"
@@ -71,12 +63,12 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
   @see ComputeWAXPBY_ref
 */
 int ComputeWAXPBY(const local_int_t n, const double alpha, const Vector & x,
-    const double beta, const Vector & y, Vector & w, bool & isOptimized) {
+    const double beta, const Vector & y, Vector & w, double &time_FPGA, bool & isOptimized) {
 
   // This line and the next two lines should be removed and your version of ComputeWAXPBY should be used.
 #ifdef FPGA
   isOptimized = true;
-  return ComputeWAXPBY_FPGA(n, alpha, x, beta, y, w);
+  return ComputeWAXPBY_FPGA(n, alpha, x, beta, y, w, time_FPGA);
 #else
   isOptimized = false;
   return ComputeWAXPBY_ref(n, alpha, x, beta, y, w);

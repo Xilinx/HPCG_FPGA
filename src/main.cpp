@@ -1,25 +1,50 @@
+/**********
+Copyright (c) 2020, Xilinx, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**********/
 
 //@HEADER
 // ***************************************************
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-/*!
- @file main.cpp
 
- HPCG routine
- */
-
-// Main routine of a program that calls the HPCG conjugate gradient
-// solver to solve the problem, and then prints results.
+/*******************************************************************************************
+ * Main of the benchmark
+ * Slightly modified to call for FPGA functions when calling for optimized 
+ * functions.
+ *******************************************************************************************/
 
 #ifndef HPCG_NO_MPI
 #include <mpi.h>
@@ -36,6 +61,7 @@ using std::endl;
 #include <vector>
 
 #include "hpcg.hpp"
+
 #include "CheckAspectRatio.hpp"
 #include "GenerateGeometry.hpp"
 #include "GenerateProblem.hpp"
@@ -52,7 +78,6 @@ using std::endl;
 #include "ComputeResidual.hpp"
 #include "CG.hpp"
 #include "CG_ref.hpp"
-#include "CG_FPGA_stream.hpp"
 #include "Geometry.hpp"
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
@@ -60,7 +85,6 @@ using std::endl;
 #include "TestCG.hpp"
 #include "TestSymmetry.hpp"
 #include "TestNorms.hpp"
-#include "FlattenMatrix.hpp"
 
 /*!
   Main driver program: Construct synthetic problem, run V&V tests, compute benchmark parameters, run benchmark, report results.
@@ -77,13 +101,20 @@ int main(int argc, char * argv[]) {
   MPI_Init(&argc, &argv);
 #endif
 
+  std::cout<< "    __________  _________       __  ______  ____________   ____                  __                         __  " <<std::endl;
+  std::cout<< "   / ____/ __ \\/ ____/   |     / / / / __ \\/ ____/ ____/  / __ )___  ____  _____/ /_  ____ ___  ____ ______/ /__" <<std::endl;
+  std::cout<< "  / /_  / /_/ / / __/ /| |    / /_/ / /_/ / /   / / __   / __  / _ \\/ __ \\/ ___/ __ \\/ __ `__ \\/ __ `/ ___/ //_/" <<std::endl;
+  std::cout<< " / __/ / ____/ /_/ / ___ |   / __  / ____/ /___/ /_/ /  / /_/ /  __/ / / / /__/ / / / / / / / / /_/ / /  / ,<   " <<std::endl;
+  std::cout<< "/_/   /_/    \\____/_/  |_|  /_/ /_/_/    \\____/\\____/  /_____/\\___/_/ /_/\\___/_/ /_/_/ /_/ /_/\\__,_/_/  /_/|_|  " <<std::endl;
+  std::cout<<std::endl;
+  std::cout<< "Based on HPCG Version: 3.1"<<std::endl;
   HPCG_Params params;
 
   HPCG_Init(&argc, &argv, params);
 
   // Check if QuickPath option is enabled.
   // If the running time is set to zero, we minimize all paths through the program
-  bool quickPath = (params.runningTime==0);
+  bool quickPath = true;//(params.runningTime==0);
 
   int size = params.comm_size, rank = params.comm_rank; // Number of MPI processes, My process ID
 
@@ -137,7 +168,7 @@ int main(int argc, char * argv[]) {
   Vector b, x, xexact;
   GenerateProblem(A, &b, &x, &xexact);
   SetupHalo(A);
-  int numberOfMgLevels = 4; // Number of levels including first
+  int numberOfMgLevels = 1; // Number of levels including first
   SparseMatrix * curLevelMatrix = &A;
   for (int level = 1; level< numberOfMgLevels; ++level) {
     GenerateCoarseProblem(*curLevelMatrix);
@@ -162,13 +193,12 @@ int main(int argc, char * argv[]) {
 
   CGData data;
   InitializeSparseCGData(A, data);
-  
+
+
+
   ////////////////////////////////////
   // Reference SpMV+MG Timing Phase //
   ////////////////////////////////////
-  std::cout<<"################################################"<<std::endl;
-  std::cout<<"       STARTING REF BENCHMARK:SpMV and MG       "<<std::endl;
-  std::cout<<"################################################"<<std::endl;
 
   // Call Reference SpMV and MG. Compute Optimization time as ratio of times in these routines
 
@@ -198,14 +228,10 @@ int main(int argc, char * argv[]) {
   if (rank==0) HPCG_fout << "Total SpMV+MG timing phase execution time in main (sec) = " << mytimer() - t1 << endl;
 #endif
 
- 
   ///////////////////////////////
   // Reference CG Timing Phase //
   ///////////////////////////////
-  
-  std::cout<<"################################################"<<std::endl;
-  std::cout<<"           STARTING REF BENCHMARK:CG            "<<std::endl;
-  std::cout<<"################################################"<<std::endl;
+
 #ifdef HPCG_DEBUG
   t1 = mytimer();
 #endif
@@ -222,6 +248,7 @@ int main(int argc, char * argv[]) {
   std::vector< double > ref_times(9,0.0);
   double tolerance = 0.0; // Set tolerance to zero to make all runs do maxIters iterations
   int err_count = 0;
+  //std::cout<< "numberOfCalls: "<< numberOfCalls <<std::endl;
   for (int i=0; i< numberOfCalls; ++i) {
     ZeroVector(x);
     ierr = CG_ref( A, data, b, x, refMaxIters, tolerance, niters, normr, normr0, &ref_times[0], true);
@@ -244,28 +271,16 @@ int main(int argc, char * argv[]) {
   if (geom->size == 1) WriteProblem(*geom, A, b, x, xexact);
 #endif
 
-  
-  std::cout<<"################################################"<<std::endl;
-  std::cout<<"            FINISHED REF BENCHMARK              "<<std::endl;
-  std::cout<<"################################################"<<std::endl;
   //////////////////////////////
   // Validation Testing Phase //
   //////////////////////////////
-  std::cout<<"################################################"<<std::endl;
-#ifdef FPGA
-  std::cout<<"    TESTING CORRECTNESS AGAINST FPGA BENCHMARK  "<<std::endl;
-#else
-  std::cout<<"      TESTING CORRECTNESS AGAINST EMULATION     "<<std::endl;
-#endif
-  std::cout<<"################################################"<<std::endl;
-
 
 #ifdef HPCG_DEBUG
   t1 = mytimer();
 #endif
   TestCGData testcg_data;
   testcg_data.count_pass = testcg_data.count_fail = 0;
-  TestCG(A, data, b, x, testcg_data);//Flatten matrix is in here, if we need to take it out
+  TestCG(A, data, b, x, testcg_data);
 
   TestSymmetryData testsymmetry_data;
   TestSymmetry(A, b, xexact, testsymmetry_data);
@@ -288,7 +303,7 @@ int main(int argc, char * argv[]) {
   err_count = 0;
   int tolerance_failures = 0;
 
-  int optMaxIters = 10*refMaxIters;
+  int optMaxIters = refMaxIters;//10*refMaxIters;
   int optNiters = refMaxIters;
   double opt_worst_time = 0.0;
 
@@ -298,7 +313,6 @@ int main(int argc, char * argv[]) {
   for (int i=0; i< numberOfCalls; ++i) {
     ZeroVector(x); // start x at all zeros
     double last_cummulative_time = opt_times[0];
-
     ierr = CG( A, data, b, x, optMaxIters, refTolerance, niters, normr, normr0, &opt_times[0], true);
     if (ierr) ++err_count; // count the number of errors in CG
     if (normr / normr0 > refTolerance) ++tolerance_failures; // the number of failures to reduce residual
@@ -330,13 +344,6 @@ int main(int argc, char * argv[]) {
 
   // Here we finally run the benchmark phase
   // The variable total_runtime is the target benchmark execution time in seconds
-  std::cout<<"################################################"<<std::endl;
-#ifdef FPGA
-  std::cout<<"           STARTING FPGA BENCHMARK              "<<std::endl;
-#else
-  std::cout<<"       STARTING CPU EMULATION BENCHMARK         "<<std::endl;
-#endif
-  std::cout<<"################################################"<<std::endl;
 
   double total_runtime = params.runningTime;
   int numberOfCgSets = int(total_runtime / opt_worst_time) + 1; // Run at least once, account for rounding
@@ -358,26 +365,11 @@ int main(int argc, char * argv[]) {
 
   for (int i=0; i< numberOfCgSets; ++i) {
     ZeroVector(x); // Zero out x
-    //Use an optimize version of the host to exploit the best performance out of the kernels
-// #ifdef FPGA
-//     ierr = CG_FPGA_stream( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
-// #else
     ierr = CG( A, data, b, x, optMaxIters, optTolerance, niters, normr, normr0, &times[0], true);
-// #endif
-
     if (ierr) HPCG_fout << "Error in call to CG: " << ierr << ".\n" << endl;
     if (rank==0) HPCG_fout << "Call [" << i << "] Scaled Residual [" << normr/normr0 << "]" << endl;
     testnorms_data.values[i] = normr/normr0; // Record scaled residual from this run
   }
-	
-  std::cout<<"################################################"<<std::endl;
-#ifdef FPGA
-  std::cout<<"           FINISHED FPGA BENCHMARK              "<<std::endl;
-#else
-  std::cout<<"         FINISHED EMULATION BENCHMARK           "<<std::endl;
-#endif
-  std::cout<<"################################################"<<std::endl;
-
 
   // Compute difference between known exact solution and computed solution
   // All processors are needed here.

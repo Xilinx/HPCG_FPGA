@@ -33,17 +33,18 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Xilinx U250/U280 vesion
+// Xilinx Alveo U280 vesion
 //
 // Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-#ifndef COMPUTEWAXPBY_FPGA_HPP
-#define COMPUTEWAXPBY_FPGA_HPP
+#ifndef COMPUTESYMGS_FPGA_HPP
+#define COMPUTESYMGS_FPGA_HPP
 #include "Vector.hpp"
-#include "common.h"
+#include "SparseMatrix.hpp"
+#include "common.hpp"
+static bool to_transfer = true;
+int ComputeSYMGS_FPGA(const SparseMatrix & A, const Vector & x, Vector & y, int ntimes, double & time_FPGA);
 
-int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x,
-    const double beta, const Vector & y, Vector & w);
-#endif // COMPUTEWAXPBY_FPGA_HPP
+#endif // COMPUTESYMGS_FPGA_HPP

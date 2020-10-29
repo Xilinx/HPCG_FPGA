@@ -1,22 +1,52 @@
+/**********
+Copyright (c) 2020, Xilinx, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**********/
 
 //@HEADER
 // ***************************************************
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-/*!
- @file SparseMatrix.hpp
 
- HPCG data structures for the sparse matrix
- */
+/********************************************************************************************
+ * Description:
+ * HPCG data structures for the sparse matrix.
+ * The structure of the matrix has been kept similar but some attributes were added.
+ * The matrix has three new structure that contain the flatten version of indexes,
+ * values and diagonal.
+ ******************************************************************************************/
 
 #ifndef SPARSEMATRIX_HPP
 #define SPARSEMATRIX_HPP
@@ -26,6 +56,11 @@
 #include "Geometry.hpp"
 #include "Vector.hpp"
 #include "MGData.hpp"
+#include "common.hpp"
+
+// This file is required for OpenCL C++ wrapper APIs
+#include "xcl2.hpp"
+
 #if __cplusplus < 201103L
 // for C++03
 #include <map>
@@ -63,12 +98,10 @@ struct SparseMatrix_STRUCT {
   mutable MGData * mgData; // Pointer to the coarse level data for this fine matrix
   void * optimizationData;  // pointer that can be used to store implementation-specific data
 
-
   //ADDED VARIABLES FOR THE FPGA KERNEL
-  local_int_t *flat_mtxIndL; //!< flat matrix indices as local values ADDED FOR SPMV OPENCL
-  double *flat_matrixDiagonal; //!< flat values of matrix diagonal entries ADDED FOR SPMV OPENCL
-  double *flat_matrixValues; //!< flat values of matrix entries ADDED FOR SPMV OPENCL
-
+  std::vector<local_int_t, aligned_allocator<local_int_t>> flat_mtxIndL; //!< flat matrix indices as local values ADDED FOR SPMV OPENCL
+  std::vector<synt_type, aligned_allocator<synt_type>> flat_matrixDiagonal; //!< flat values of matrix diagonal entries ADDED FOR SPMV OPENCL
+  std::vector<synt_type, aligned_allocator<synt_type>> flat_matrixValues; //!< flat values of matrix entries ADDED FOR SPMV OPENCL
 
 #ifndef HPCG_NO_MPI
   local_int_t numberOfExternalValues; //!< number of entries that are external to this process
@@ -187,6 +220,43 @@ inline void DeleteMatrix(SparseMatrix & A) {
   if (A.Ac!=0) { DeleteMatrix(*A.Ac); delete A.Ac; A.Ac = 0;} // Delete coarse matrix
   if (A.mgData!=0) { DeleteMGData(*A.mgData); delete A.mgData; A.mgData = 0;} // Delete MG data
   return;
+}
+
+
+inline void FlattenMatrix(SparseMatrix &A){
+
+  int maxNumberOfNonzerosPerRow = 27;//is at most 27
+  long locNumRows = A.localNumberOfRows;//might need to change to total number of rows..
+  int nonzeroAdjusted = ((maxNumberOfNonzerosPerRow + sizeof(synt_type) - 1 )/ sizeof(synt_type))*sizeof(synt_type);
+  long arr_size = locNumRows*nonzeroAdjusted;
+    // free(A.flat_mtxIndL);
+    // free(A.flat_matrixValues);
+    // free(A.flat_matrixDiagonal);
+  A.flat_mtxIndL.resize(arr_size);
+  A.flat_matrixValues.resize(arr_size);
+  A.flat_matrixDiagonal.resize(arr_size);
+
+  for(long x = 0; x < locNumRows; x++){
+    #ifndef HPCG_NO_OPENMP
+    #pragma omp parallel for
+    #endif
+    for(int y = 0; y < nonzeroAdjusted; y++ ){
+
+      if(y < nonzeroAdjusted){//should be correct
+        A.flat_mtxIndL[x*nonzeroAdjusted+y] = A.mtxIndL[x][y];
+        A.flat_matrixValues[x*nonzeroAdjusted+y] = A.matrixValues[x][y];
+        A.flat_matrixDiagonal[x*nonzeroAdjusted+y] = A.matrixDiagonal[x][y];
+      }
+      else{
+        A.flat_mtxIndL[x*nonzeroAdjusted+y] = 0;
+        A.flat_matrixValues[x*nonzeroAdjusted+y] = 0;
+        A.flat_matrixDiagonal[x*nonzeroAdjusted+y] = 0;
+      }
+    }
+  }
+  // A.flat_mtxIndL.data() = flat_mtxIndL;
+  // A.flat_matrixValues.data() = flat_matrixValues;
+  // A.flat_matrixDiagonal.data() = flat_matrixDiagonal;
 }
 
 #endif // SPARSEMATRIX_HPP

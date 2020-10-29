@@ -33,7 +33,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Xilinx U250/U280 vesion
+// Xilinx Alveo U280 vesion
 //
 // Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
@@ -42,8 +42,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #ifndef COMPUTEWAXPBY_FPGA_HPP
 #define COMPUTEWAXPBY_FPGA_HPP
 #include "Vector.hpp"
-#include "common.h"
+#include "common.hpp"
 
 int ComputeWAXPBY_FPGA(const local_int_t n, const double alpha, const Vector & x,
-    const double beta, const Vector & y, Vector & w);
+    const double beta, const Vector & y, Vector & w, double &time_FPGA);
 #endif // COMPUTEWAXPBY_FPGA_HPP

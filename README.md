@@ -9,7 +9,7 @@ FPGA version by Alberto Zeni and Kenneth O'Brien - Xilinx Inc.
 
 Based on HPCG:
 
-Revision: 3.1 Date: March 28, 2019
+Original HPCG Revision: 3.1 Date: March 28, 2019
 
 ## Introduction ##
 
@@ -43,9 +43,10 @@ compliant with MPI version 1.1 is sufficient.
 ## FPGA Implementation ##
 
 The FPGA implementation of HPCG has been developed keeping the same calculations as 
-the vanilla version of HPCG implementing specific optimizations for multiple FPGA execution.
+the original software version of HPCG implementing specific optimizations for multiple FPGA execution.
 All the source code of the optimized version of HPCG is located in the `src-fpga` directory.
 All the code has been optimized for the Alveo U280 FPGA, and can be run using 1 or multiple boards.
+The 
 
 ## Results ##
 

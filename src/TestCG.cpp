@@ -1,54 +1,60 @@
+/**********
+Copyright (c) 2020, Xilinx, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**********/
 
 //@HEADER
 // ***************************************************
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-/*!
- @file TestCG.cpp
 
- HPCG routine
- */
-
-// Changelog
-//
-// Version 0.4
-// - Added timing of setup time for sparse MV
-// - Corrected percentages reported for sparse MV with overhead
-//
-/////////////////////////////////////////////////////////////////////////
+/*******************************************************************************************
+ * Test the correctness of the Preconditined CG implementation 
+ * by using a system matrix with a dominant diagonal.
+ * Added functions to flatten the matrix while computing this operations.
+ *******************************************************************************************/
 
 #include <fstream>
 #include <iostream>
 using std::endl;
 #include <vector>
 #include "hpcg.hpp"
-#include "FlattenMatrix.hpp"
+
 #include "TestCG.hpp"
 #include "CG.hpp"
 
-/*!
-  Test the correctness of the Preconditined CG implementation by using a system matrix with a dominant diagonal.
-
-  @param[in]    geom The description of the problem's geometry.
-  @param[in]    A    The known system matrix
-  @param[in]    data the data structure with all necessary CG vectors preallocated
-  @param[in]    b    The known right hand side vector
-  @param[inout] x    On entry: the initial guess; on exit: the new approximate solution
-  @param[out]   testcg_data the data structure with the results of the test including pass/fail information
-
-  @return Returns zero on success and a non-zero value otherwise.
-
-  @see CG()
- */
 int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData & testcg_data) {
 
 
@@ -78,7 +84,9 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
   }
   ReplaceMatrixDiagonal(A, exaggeratedDiagA);
 
-  FlattenMatrix(A,  27);  //fill flat matrix
+  //Flatten Matrix
+  FlattenMatrix(A);
+  //
   int niters = 0;
   double normr = 0.0;
   double normr0 = 0.0;
@@ -114,13 +122,15 @@ int TestCG(SparseMatrix & A, CGData & data, Vector & b, Vector & x, TestCGData &
   // Restore matrix diagonal and RHS
   ReplaceMatrixDiagonal(A, origDiagA);
   CopyVector(origB, b);
-  // Delete vectors 
+  // Delete vectors
   DeleteVector(origDiagA);
   DeleteVector(exaggeratedDiagA);
   DeleteVector(origB);
   testcg_data.normr = normr;
-  
-  FlattenMatrix(A,  27);
+
+  //Flatten Matrix
+  FlattenMatrix(A);
+  //
 
   return 0;
 }

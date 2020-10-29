@@ -28,6 +28,21 @@ THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **********/
 
+//@HEADER
+// ***************************************************
+//
+// HPCG: High Performance Conjugate Gradient Benchmark
+//
+// Xilinx Alveo U280 vesion
+//
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
+// ***************************************************
+//@HEADER
+
+/*********************************************************
+ * Host for the computation of DP
+ *********************************************************/
+
 #include <algorithm>
 #include <cstring>
 #include <iostream>
@@ -37,12 +52,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <vector>
 #include <chrono>
 
-// This extension file is required for stream APIs
-#include "CL/cl_ext_xilinx.h"
 // This file is required for OpenCL C++ wrapper APIs
 #include "xcl2.hpp"
-// File containing common info
-#include "common.h"
 
 #include "ComputeDotProduct_FPGA.hpp"
 
@@ -54,58 +65,84 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <omp.h>
 #endif
 
+#define NUM_KERNEL 8 
+
+//HBM Banks requirements
+#define MAX_HBM_BANKCOUNT 32
+#define BANK_NAME(n) n | XCL_MEM_TOPOLOGY
+const int bank[MAX_HBM_BANKCOUNT] = {
+        BANK_NAME(0),  BANK_NAME(1),  BANK_NAME(2),  BANK_NAME(3),  BANK_NAME(4),
+        BANK_NAME(5),  BANK_NAME(6),  BANK_NAME(7),  BANK_NAME(8),  BANK_NAME(9),
+        BANK_NAME(10), BANK_NAME(11), BANK_NAME(12), BANK_NAME(13), BANK_NAME(14),
+        BANK_NAME(15), BANK_NAME(16), BANK_NAME(17), BANK_NAME(18), BANK_NAME(19),
+        BANK_NAME(20), BANK_NAME(21), BANK_NAME(22), BANK_NAME(23), BANK_NAME(24),
+        BANK_NAME(25), BANK_NAME(26), BANK_NAME(27), BANK_NAME(28), BANK_NAME(29),
+        BANK_NAME(30), BANK_NAME(31)};
+
 int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector & y,
-    double & result, double & time_allreduce){
+    double & result, double & timeFPGA, double & time_allreduce){
 
-	unsigned long size = n;
+	std::string binaryFile = PATH_TO_BINARY_DP;
+    cl_int err;
+    cl::CommandQueue q;
+    std::string krnl_name = "dp";
+    std::vector<cl::Kernel> krnls(NUM_KERNEL);
+    cl::Context context;
+    std::vector<synt_type, aligned_allocator<synt_type>> source_in1[NUM_KERNEL];
+    std::vector<synt_type, aligned_allocator<synt_type>> source_in2[NUM_KERNEL];
+    // std::vector<synt_type, aligned_allocator<synt_type>> source_hw_dp_results(NUM_KERNEL);
+    unsigned int dataSize = n/NUM_KERNEL;
 
-    auto binaryFile = "../bitstreams/hw/single_bitstream/build_dir.hw.xilinx_u250_qdma_201920_1/cg.xclbin";
-
-	std::vector<synt_type, aligned_allocator<synt_type>> h_a(size);
-    std::vector<synt_type, aligned_allocator<synt_type>> h_b(size);
-    std::vector<synt_type, aligned_allocator<synt_type>> hw_results(size);
-
-    for(unsigned int i = 0; i < size; i++){
-    	h_a[i] = x.values[i];
-    	h_b[i] = y.values[i];
+    for(size_t i = 0; i < NUM_KERNEL; i++){
+    	source_in1[i].resize(dataSize);
+        source_in2[i].resize(dataSize);
     }
 
-    hw_results[0] = 0.0;
+    for (unsigned long i = 0; i < NUM_KERNEL; i++) {
+        for(long j = 0; j < dataSize; j++){
+        	source_in1[i][j] = x.values[j+i*dataSize];
+        	source_in2[i][j] = y.values[j+i*dataSize];
+        }
+    }
 
-    cl::Device device;
-    cl::Context context;
-    cl::CommandQueue q;
-    cl::Program program;
-    cl::Kernel krnl;
-
-    // Error Status variable
-    cl_int err;
-
-    // get_xil_devices() is a utility API which will find the xilinx
-    // platforms and will return list of devices connected to Xilinx platform
+    // OPENCL HOST CODE AREA START
+    // The get_xil_devices will return vector of Xilinx Devices
     auto devices = xcl::get_xil_devices();
 
-    device = devices[0];
-    // read_binary_file() is a utility API which will load the binaryFile
-    // and will return the pointer to file buffer.
+    // read_binary_file() command will find the OpenCL binary file created using the
+    // V++ compiler load into OpenCL Binary and return pointer to file buffer.
     auto fileBuf = xcl::read_binary_file(binaryFile);
 
     cl::Program::Binaries bins{{fileBuf.data(), fileBuf.size()}};
     int valid_device = 0;
-    for (unsigned int i = 0; i < devices.size(); i++) {
-        device = devices[i];
+    for (unsigned int i = 0; i < devices.size(); i++) {//start from 1 bc of machine
+        auto device = devices[i];
         // Creating Context and Command Queue for selected Device
-        OCL_CHECK(err, context = cl::Context({device}, NULL, NULL, NULL, &err));
+        OCL_CHECK(err, context = cl::Context(device, NULL, NULL, NULL, &err));
         OCL_CHECK(err,
-                  q = cl::CommandQueue(
-                      context, {device}, CL_QUEUE_PROFILING_ENABLE, &err));
+                q = cl::CommandQueue(context,
+                                     device,
+                                     CL_QUEUE_OUT_OF_ORDER_EXEC_MODE_ENABLE |
+                                     CL_QUEUE_PROFILING_ENABLE,
+                                     &err));
+
         cl::Program program(context, {device}, bins, NULL, &err);
-        if (err != CL_SUCCESS) {
-            std::cout << "Failed to program device[" << i
-                      << "] with xclbin file!\n";
-        } else {
-            OCL_CHECK(
-                err, krnl = cl::Kernel(program, "vecdotprod", &err));
+        if (err == CL_SUCCESS)  {
+            // Creating Kernel object using Compute unit names
+
+            for (int i = 0; i < NUM_KERNEL; i++) {
+                std::string cu_id = std::to_string(i + 1);
+                std::string krnl_name_full =
+                        krnl_name + ":{" + "dp_" + cu_id + "}";
+         
+
+                //Here Kernel object is created by specifying kernel name along with compute unit.
+                //For such case, this kernel object can only access the specific Compute unit
+
+                OCL_CHECK(err,
+                krnls[i] = cl::Kernel(
+                program, krnl_name_full.c_str(), &err));
+            }
             valid_device++;
             break; // we break because we found a valid device
         }
@@ -115,85 +152,92 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
         exit(EXIT_FAILURE);
     }
 
-    auto platform_id = device.getInfo<CL_DEVICE_PLATFORM>(&err);
+    std::vector<cl_mem_ext_ptr_t> inBufExt1(NUM_KERNEL);
+    std::vector<cl_mem_ext_ptr_t> inBufExt2(NUM_KERNEL);
 
-    //Initialization of streaming class is needed before using it.
-    xcl::Stream::init(platform_id);
-    size_t vector_size_bytes = size * sizeof(synt_type);
+    std::vector<cl::Buffer> buffer_input1(NUM_KERNEL);
+    std::vector<cl::Buffer> buffer_input2(NUM_KERNEL);
 
-    // Streams
-    // Device Connection specification of the stream through extension pointer
-    cl_int ret;
-    cl_mem_ext_ptr_t ext;
-    ext.param = krnl.get();
-    ext.obj = NULL;
+    // For Allocating Buffer to specific Global Memory Bank, user has to use cl_mem_ext_ptr_t
+    // and provide the Banks
 
-    //Create write stream for argument 0 and 1 of kernel
-    cl_stream write_stream_a, write_stream_b;
-    ext.flags = 0;
-    OCL_CHECK(ret,
-              write_stream_a = xcl::Stream::createStream(
-                  device.get(), CL_STREAM_WRITE_ONLY, CL_STREAM, &ext, &ret));
-    ext.flags = 1;
-    OCL_CHECK(ret,
-              write_stream_b = xcl::Stream::createStream(
-                  device.get(), CL_STREAM_WRITE_ONLY, CL_STREAM, &ext, &ret));
+    for (int i = 0; i < NUM_KERNEL; i++) {
+        inBufExt1[i].obj = source_in1[i].data();
+        inBufExt1[i].param = 0;
+        inBufExt1[i].flags = bank[i * 4 + 2];
 
-    //Create read stream for argument 2 of kernel
-    cl_stream read_stream;
-    ext.flags = 2;
-    OCL_CHECK(ret,
-              read_stream = xcl::Stream::createStream(
-                  device.get(), CL_STREAM_READ_ONLY, CL_STREAM, &ext, &ret));
+        inBufExt2[i].obj = source_in2[i].data();
+        inBufExt2[i].param = 0;
+        inBufExt2[i].flags = bank[(i * 4) + 3];
 
-    // Launch the Kernel
-    cl::Event nb_wait_event;
-    OCL_CHECK(err, err = q.enqueueTask(krnl, NULL, &nb_wait_event));
+    }
 
-    // Initiating the WRITE transfer
-    cl_stream_xfer_req nb_wr_req{0};
+    // These commands will allocate memory on the FPGA. The cl::Buffer objects can
+    // be used to reference the memory locations on the device.
+    //Creating Buffers
+    for (int i = 0; i < NUM_KERNEL; i++) {
+        OCL_CHECK(err,
+                    buffer_input1[i] =            
+                    cl::Buffer(context,
+                    CL_MEM_READ_ONLY | CL_MEM_EXT_PTR_XILINX |
+                    CL_MEM_USE_HOST_PTR,
+                    sizeof(synt_type) * dataSize,
+                    &inBufExt1[i],
+                    &err));
+        OCL_CHECK(err,
+                    buffer_input2[i] =
+                    cl::Buffer(context,
+                    CL_MEM_READ_WRITE | CL_MEM_EXT_PTR_XILINX |
+                    CL_MEM_USE_HOST_PTR,
+                    sizeof(synt_type) * dataSize,
+                    &inBufExt2[i],
+                    &err));
+    }
 
-    nb_wr_req.flags = CL_STREAM_EOT | CL_STREAM_NONBLOCKING;
-    nb_wr_req.priv_data = (void *)"nb_write_a";
 
-    // Writing data to input stream 1 independently in case of non-blocking transfers.
-    OCL_CHECK(
-        ret,
-        xcl::Stream::writeStream(
-            write_stream_a, h_a.data(), vector_size_bytes, &nb_wr_req, &ret));
-
-    nb_wr_req.priv_data = (void *)"nb_write_b";
-    // Writing data to input stream 2 independently in case of non-blocking transfers.
-    OCL_CHECK(
-        ret,
-        xcl::Stream::writeStream(
-            write_stream_b, h_b.data(), vector_size_bytes, &nb_wr_req, &ret));
-
-    // Initiating the READ transfer
-    cl_stream_xfer_req nb_rd_req{0};
-    nb_rd_req.flags = CL_STREAM_EOT | CL_STREAM_NONBLOCKING;
-    nb_rd_req.priv_data = (void *)"nb_read";
-    // Reading the stream data independently in case of non-blocking transfers.
-    OCL_CHECK(ret,
-              xcl::Stream::readStream(read_stream,
-                                      hw_results.data(),
-                                      sizeof(synt_type),
-                                      &nb_rd_req,
-                                      &ret));
-
-    // Checking the request completion
-    cl_streams_poll_req_completions poll_req[3]{0, 0, 0}; // 3 Requests
-    auto num_compl = 3;
-    OCL_CHECK(ret,
-              xcl::Stream::pollStreams(
-                  device.get(), poll_req, 3, 3, &num_compl, 5000000, &ret));
-
+    // Copy input data to Device Global Memory
+    for (int i = 0; i < NUM_KERNEL; i++) {
+        OCL_CHECK(err,
+        err = q.enqueueMigrateMemObjects(
+        {buffer_input1[i], buffer_input2[i]},
+        0 /* 0 means from host*/));
+    }
     q.finish();
-    double local_result = hw_results[0];
-    // Releasing Streams
-    xcl::Stream::releaseStream(read_stream);
-    xcl::Stream::releaseStream(write_stream_a);
-    xcl::Stream::releaseStream(write_stream_b);
+    double kernel_time_in_sec = 0;
+    // return 0;
+    std::chrono::duration<double> kernel_time(0);
+    // return 0;
+    auto kernel_start = std::chrono::high_resolution_clock::now();
+
+    for (int i = 0; i < NUM_KERNEL; i++) {
+        //Setting the Kernel Arguments
+        OCL_CHECK(err, err = krnls[i].setArg(0, buffer_input1[i]));
+        OCL_CHECK(err, err = krnls[i].setArg(1, buffer_input2[i]));
+        OCL_CHECK(err, err = krnls[i].setArg(2, dataSize));
+
+        //Invoking the kernel
+        OCL_CHECK(err, err = q.enqueueTask(krnls[i]));
+    }
+    q.finish();
+    // return 0;
+    auto kernel_end = std::chrono::high_resolution_clock::now();
+    kernel_time = std::chrono::duration<double>(kernel_end - kernel_start);
+
+    kernel_time_in_sec = kernel_time.count();
+
+    // Copy Result from Device Global Memory to Host Local Memory
+    for (int i = 0; i < NUM_KERNEL; i++) {
+        OCL_CHECK(err,
+            err = q.enqueueMigrateMemObjects(
+            {buffer_input2[i]},
+            CL_MIGRATE_MEM_OBJECT_HOST));
+    }
+    q.finish();
+
+    synt_type local_result=0;
+    for(unsigned i = 0; i< NUM_KERNEL; i++)
+    	local_result += source_in2[i][0];
+  
     #ifndef HPCG_NO_MPI
     // Use MPI's reduce function to collect all partial sums
         double t0 = mytimer();
@@ -205,5 +249,6 @@ int ComputeDotProduct_FPGA(const local_int_t n, const Vector & x, const Vector &
         time_allreduce += 0.0;
         result = local_result;
     #endif  
+        timeFPGA += kernel_time_in_sec;
     return 0;
 }

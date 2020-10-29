@@ -16,7 +16,7 @@
 #define COMPUTESYMGS_REF_HPP
 #include "SparseMatrix.hpp"
 #include "Vector.hpp"
-
+// static int counter_ex = 1;
 int ComputeSYMGS_ref( const SparseMatrix  & A, const Vector & r, Vector & x);
 
 #endif // COMPUTESYMGS_REF_HPP

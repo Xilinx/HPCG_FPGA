@@ -33,7 +33,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Xilinx U250/U280 vesion
+// Xilinx Alveo U280 vesion
 //
 // Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
@@ -43,8 +43,8 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define COMPUTESPMV_FPGA_HPP
 #include "Vector.hpp"
 #include "SparseMatrix.hpp"
-#include "common.h"
+#include "common.hpp"
 
-int ComputeSPMV_FPGA(const SparseMatrix & A, synt_type *m_v, Vector & x, Vector & y);
+int ComputeSPMV_FPGA(const SparseMatrix & A, Vector & x, Vector & y, double & time_FPGA);
 
 #endif // COMPUTESPMV_FPGA_HPP

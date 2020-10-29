@@ -28,30 +28,20 @@ THIS SOFTWARE,
 EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 **********/
 
-
 //@HEADER
 // ***************************************************
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-/*!
- @file ComputeMG.cpp
-
- HPCG routine
- */
-
 #include "ComputeMG.hpp"
-#include "ComputeMG_ref.hpp"
 #include "ComputeMG_FPGA.hpp"
-#include <iostream>
+#include "ComputeMG_ref.hpp"
 
 /*!
   @param[in] A the known system matrix
@@ -62,14 +52,13 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
   @see ComputeMG_ref
 */
-int ComputeMG(const SparseMatrix  & A, const Vector & r, Vector & x) {
+int ComputeMG(const SparseMatrix  & A, const Vector & r, Vector & x, double & time) {
 
-  // This line and the next two lines should be removed and your version of ComputeSYMGS should be used.
-#ifdef FPGA
-  A.isMgOptimized = true;
-  return ComputeMG_FPGA(A, r, x);
-#else
-  A.isMgOptimized = false;
-  return ComputeMG_ref(A, r, x);
-#endif
+  #ifdef FPGA
+    A.isMgOptimized = true;
+    return ComputeMG_FPGA(A, r, x, time);
+  #else
+  	A.isMgOptimized = false;
+  	return ComputeMG_ref(A, r, x);
+  #endif
 }

@@ -14,7 +14,7 @@ ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 TARGET := hw
 HOST_ARCH := x86
 SYSROOT := 
-DEVICE = /proj/xbuilds/2020.1_daily_latest/internal_platforms/xilinx_u250_qdma_201910_1/xilinx_u250_qdma_201910_1.xpfm 
+DEVICE = /proj/xbuilds/2020.1_released/internal_platforms/xilinx_u280_xdma_201920_3/xilinx_u280_xdma_201920_3.xpfm 
 
 #Include Libraries
 include src/common/includes/opencl/opencl.mk
@@ -23,7 +23,7 @@ CXXFLAGSFPGA += $(xcl2_CXXFLAGS)
 LDFLAGS += $(xcl2_LDFLAGS)
 HOST_SRCS += $(xcl2_SRCS)
 CXXFLAGSFPGA += -pthread
-CXXFLAGSFPGA += $(opencl_CXXFLAGS) -Wall -O3 -std=c++11 
+CXXFLAGSFPGA += $(opencl_CXXFLAGS) -Wall -std=c++11 
 LDFLAGS += $(opencl_LDFLAGS) 
 
 # HOST_SRCS += host.cpp 
@@ -40,13 +40,11 @@ BINARY_CONTAINERS += $(BUILD_DIR)/vecdotprod.xclbin
 BINARY_CONTAINER_vecdotprod_OBJS += $(TEMP_DIR)/vecdotprod.xo
 
 CP = cp -rf
-CXXFLAGS += -Wno-long-long 
+CXXFLAGS += $(CXXFLAGSFPGA)
 # FPGA_HOST_FLAGS = $(xcl2_CXXFLAGS) -pthread $(opencl_CXXFLAGS) -Wall -O0 -g -std=c++11 -fmessage-length=0
 # LDFLAGS += $(xcl2_LDFLAGS) $(opencl_LDFLAGS) -lrt -lstdc++ --sysroot=$(SYSROOT)
 
 HPCG_DEPS = src/xcl2.o \
-		 src/FlattenMatrix.o \
-		 src/PrepareVector.o \
 		 src/CG.o \
 		 src/CG_ref.o \
 		 src/TestCG.o \
@@ -69,20 +67,15 @@ HPCG_DEPS = src/xcl2.o \
 		 src/YAML_Element.o \
 		 src/ComputeDotProduct.o \
 		 src/ComputeDotProduct_ref.o \
-		 src/ComputeDotProduct_FPGA.o \
-		 src/CG_FPGA_stream.o \
 		 src/mytimer.o \
 		 src/ComputeOptimalShapeXYZ.o \
 		 src/ComputeSPMV.o \
-		 src/ComputeSPMV_FPGA.o \
 		 src/ComputeSPMV_ref.o \
 		 src/ComputeSYMGS.o \
 		 src/ComputeSYMGS_ref.o \
 		 src/ComputeWAXPBY.o \
 		 src/ComputeWAXPBY_ref.o \
-		 src/ComputeWAXPBY_FPGA.o \
 		 src/ComputeMG_ref.o \
-		 src/ComputeMG_FPGA.o \
 		 src/ComputeMG.o \
 		 src/ComputeProlongation_ref.o \
 		 src/ComputeRestriction_ref.o \
@@ -90,7 +83,13 @@ HPCG_DEPS = src/xcl2.o \
 		 src/OutputFile.o \
 		 src/GenerateCoarseProblem.o \
 		 src/init.o \
-		 src/finalize.o
+		 src/finalize.o \
+		 src/PrepareVector.o \
+		 src/ComputeSPMV_FPGA.o \
+		 src/ComputeDotProduct_FPGA.o \
+		 src/ComputeWAXPBY_FPGA.o \
+		 src/ComputeMG_FPGA.o \
+		 src/ComputeSYMGS_FPGA.o \
 
 # These header files are included in many source files, so we recompile every file if one or more of these header is modified.
 PRIMARY_HEADERS = src/Geometry.hpp src/SparseMatrix.hpp src/Vector.hpp src/CGData.hpp \
@@ -99,14 +98,14 @@ PRIMARY_HEADERS = src/Geometry.hpp src/SparseMatrix.hpp src/Vector.hpp src/CGDat
 all: bin/xhpcg
 
 bin/xhpcg: src/main.o $(HPCG_DEPS)
-	$(LINKER) $(LINKFLAGS) src/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o bin/xhpcg $(LDFLAGS) 
+	$(LINKER) $(LINKFLAGS) src/main.o $(HPCG_DEPS) $(HPCG_LIBS) -o bin/xhpcg $(LDFLAGS)
 
 clean:
 	rm -f src/*.o bin/xhpcg
 
 .PHONY: all clean
 
-src/main.o: src/main.cpp $(PRIMARY_HEADERS)
+src/main.o: src/main.cpp $(PRIMARY_HEADERS) 
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/CG.o: src/CG.cpp src/CG.hpp $(PRIMARY_HEADERS)
@@ -227,26 +226,24 @@ src/OutputFile.o: src/OutputFile.cpp src/OutputFile.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/xcl2.o: src/common/includes/xcl2/xcl2.cpp src/common/includes/xcl2/xcl2.hpp
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) $(FPGA_HOST_FLAGS) -Isrc $< -o $@ 
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@ 
 
 src/ComputeWAXPBY_FPGA.o: src/ComputeWAXPBY_FPGA.cpp src/ComputeWAXPBY_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/ComputeDotProduct_FPGA.o: src/ComputeDotProduct_FPGA.cpp src/ComputeDotProduct_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
-
-src/FlattenMatrix.o: src/FlattenMatrix.cpp src/FlattenMatrix.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/ComputeSPMV_FPGA.o: src/ComputeSPMV_FPGA.cpp src/ComputeSPMV_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/PrepareVector.o: src/PrepareVector.cpp src/PrepareVector.hpp $(PRIMARY_HEADERS)
 	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
 src/ComputeMG_FPGA.o: src/ComputeMG_FPGA.cpp src/ComputeMG_FPGA.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
 
-src/CG_FPGA_stream.o: src/CG_FPGA_stream.cpp src/CG_FPGA_stream.hpp $(PRIMARY_HEADERS)
-	$(CXX) -c $(CXXFLAGS) $(CXXFLAGSFPGA) -Isrc $< -o $@
+src/ComputeSYMGS_FPGA.o: src/ComputeSYMGS_FPGA.cpp src/ComputeSYMGS_FPGA.hpp $(PRIMARY_HEADERS)
+	$(CXX) -c $(CXXFLAGS) -Isrc $< -o $@
+
 

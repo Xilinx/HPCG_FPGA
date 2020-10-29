@@ -1,22 +1,44 @@
+/**********
+Copyright (c) 2020, Xilinx, Inc.
+All rights reserved.
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+1. Redistributions of source code must retain the above copyright notice,
+this list of conditions and the following disclaimer.
+2. Redistributions in binary form must reproduce the above copyright notice,
+this list of conditions and the following disclaimer in the documentation
+and/or other materials provided with the distribution.
+3. Neither the name of the copyright holder nor the names of its contributors
+may be used to endorse or promote products derived from this software
+without specific prior written permission.
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED.
+IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT,
+INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO,
+PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR
+BUSINESS INTERRUPTION)
+HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+LIABILITY,
+OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
+THIS SOFTWARE,
+EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+**********/
 
 //@HEADER
 // ***************************************************
 //
 // HPCG: High Performance Conjugate Gradient Benchmark
 //
-// Contact:
-// Michael A. Heroux ( maherou@sandia.gov)
-// Jack Dongarra     (dongarra@eecs.utk.edu)
-// Piotr Luszczek    (luszczek@eecs.utk.edu)
+// Xilinx Alveo U280 vesion
 //
+// Alberto Zeni, Kenneth O'Brien - albertoz,kennetho{@xilinx.com}
 // ***************************************************
 //@HEADER
 
-/*!
- @file CG.cpp
-
- HPCG routine
- */
 
 #include <fstream>
 
@@ -30,9 +52,7 @@
 #include "ComputeMG.hpp"
 #include "ComputeDotProduct.hpp"
 #include "ComputeWAXPBY.hpp"
-#include "PrepareVector.hpp"
 #include <iostream>
-
 
 // Use TICK and TOCK to time a code section in MATLAB-like fashion
 #define TICK()  t0 = mytimer() //!< record current time in 't0'
@@ -61,13 +81,13 @@
 int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
     const int max_iter, const double tolerance, int & niters, double & normr, double & normr0,
     double * times, bool doPreconditioning) {
-  
+
   double t_begin = mytimer();  // Start timing right away
   normr = 0.0;
   double rtz = 0.0, oldrtz = 0.0, alpha = 0.0, beta = 0.0, pAp = 0.0;
 
 
-  double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0, t5 = 0.0;
+  double t0 = 0.0, t1 = 0.0, t2 = 0.0, t3 = 0.0, t4 = 0.0, t5 = 0.0, t1FPGA = 0.0, t2FPGA = 0.0, t3FPGA = 0.0, t4FPGA = 0.0, t5FPGA = 0.0;
 //#ifndef HPCG_NO_MPI
 //  double t6 = 0.0;
 //#endif
@@ -76,6 +96,7 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
   Vector & z = data.z; // Preconditioned residual vector
   Vector & p = data.p; // Direction vector (in MPI mode ncol>=nrow)
   Vector & Ap = data.Ap;
+
   if (!doPreconditioning && A.geom->rank==0) HPCG_fout << "WARNING: PERFORMING UNPRECONDITIONED ITERATIONS" << std::endl;
 
 #ifdef HPCG_DEBUG
@@ -85,11 +106,9 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
 #endif
   // p is of length ncols, copy x to p for sparse MV operation
   CopyVector(x, p);
-  prepareVector(p,A,27);
-  TICK(); ComputeSPMV(A, p, Ap); TOCK(t3); // Ap = A*p
-  free(p.val_spmv);
-  TICK(); ComputeWAXPBY(nrow, 1.0, b, -1.0, Ap, r, A.isWaxpbyOptimized);  TOCK(t2); // r = b - Ax (x stored in p)
-  TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized); TOCK(t1);
+  TICK(); ComputeSPMV(A, p, Ap, t3FPGA); TOCK(t3); // Ap = A*p
+  TICK(); ComputeWAXPBY(nrow, 1.0, b, -1.0, Ap, r, t2FPGA, A.isWaxpbyOptimized);  TOCK(t2); // r = b - Ax (x stored in p)
+  TICK(); ComputeDotProduct(nrow, r, r, normr, t1FPGA, t4FPGA, A.isDotProductOptimized); TOCK(t1);
   normr = sqrt(normr);
 #ifdef HPCG_DEBUG
   if (A.geom->rank==0) HPCG_fout << "Initial Residual = "<< normr << std::endl;
@@ -99,32 +118,33 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
   normr0 = normr;
 
   // Start iterations
- 
+
   for (int k=1; k<=max_iter && normr/normr0 > tolerance; k++ ) {
     TICK();
-    if (doPreconditioning)
-      ComputeMG(A, r, z); // Apply preconditioner
+    if (doPreconditioning){
+      // if (A.mgData!=0)  // Go to next coarse level if defined//To see how many times this is actually called
+      ComputeMG(A, r, z, t5FPGA); // Apply preconditioner
+    }
     else
       CopyVector (r, z); // copy r to z (no preconditioning)
     TOCK(t5); // Preconditioner apply time
 
     if (k == 1) {
-      TICK(); ComputeWAXPBY(nrow, 1.0, z, 0.0, z, p, A.isWaxpbyOptimized); TOCK(t2); // Copy Mr to p
-      TICK(); ComputeDotProduct (nrow, r, z, rtz, t4, A.isDotProductOptimized); TOCK(t1); // rtz = r'*z
+      TICK(); ComputeWAXPBY(nrow, 1.0, z, 0.0, z, p, t2FPGA,A.isWaxpbyOptimized); TOCK(t2); // Copy Mr to p
+      TICK(); ComputeDotProduct (nrow, r, z, rtz, t1FPGA, t4FPGA, A.isDotProductOptimized); TOCK(t1); // rtz = r'*z
     } else {
       oldrtz = rtz;
-      TICK(); ComputeDotProduct (nrow, r, z, rtz, t4, A.isDotProductOptimized); TOCK(t1); // rtz = r'*z
+      TICK(); ComputeDotProduct (nrow, r, z, rtz, t1FPGA, t4FPGA, A.isDotProductOptimized); TOCK(t1); // rtz = r'*z
       beta = rtz/oldrtz;
-      TICK(); ComputeWAXPBY (nrow, 1.0, z, beta, p, p, A.isWaxpbyOptimized);  TOCK(t2); // p = beta*p + z
+      TICK(); ComputeWAXPBY(nrow, 1.0, z, beta, p, p, t2FPGA, A.isWaxpbyOptimized);  TOCK(t2); // p = beta*p + z
     }
-    prepareVector(p,A,27);
-    TICK(); ComputeSPMV(A, p, Ap); TOCK(t3); // Ap = A*p
-    free(p.val_spmv);
-    TICK(); ComputeDotProduct(nrow, p, Ap, pAp, t4, A.isDotProductOptimized); TOCK(t1); // alpha = p'*Ap
+
+    TICK(); ComputeSPMV(A, p, Ap, t3FPGA); TOCK(t3); // Ap = A*p
+    TICK(); ComputeDotProduct(nrow, p, Ap, pAp, t1FPGA, t4FPGA, A.isDotProductOptimized); TOCK(t1); // alpha = p'*Ap
     alpha = rtz/pAp;
-    TICK(); ComputeWAXPBY(nrow, 1.0, x, alpha, p, x, A.isWaxpbyOptimized);// x = x + alpha*p
-            ComputeWAXPBY(nrow, 1.0, r, -alpha, Ap, r, A.isWaxpbyOptimized);  TOCK(t2);// r = r - alpha*Ap
-    TICK(); ComputeDotProduct(nrow, r, r, normr, t4, A.isDotProductOptimized); TOCK(t1);
+    TICK(); ComputeWAXPBY(nrow, 1.0, x, alpha, p, x, t2FPGA, A.isWaxpbyOptimized);// x = x + alpha*p
+            ComputeWAXPBY(nrow, 1.0, r, -alpha, Ap, r, t2FPGA, A.isWaxpbyOptimized);  TOCK(t2);// r = r - alpha*Ap
+    TICK(); ComputeDotProduct(nrow, r, r, normr, t1FPGA, t4FPGA, A.isDotProductOptimized); TOCK(t1);
     normr = sqrt(normr);
 #ifdef HPCG_DEBUG
     if (A.geom->rank==0 && (k%print_freq == 0 || k == max_iter))
@@ -132,16 +152,16 @@ int CG(const SparseMatrix & A, CGData & data, const Vector & b, Vector & x,
 #endif
     niters = k;
   }
-
+  std::cout<< "out" <<std::endl;
   // Store times
-  times[1] += t1; // dot-product time
-  times[2] += t2; // WAXPBY time
-  times[3] += t3; // SPMV time
-  times[4] += t4; // AllReduce time
-  times[5] += t5; // preconditioner apply time
+  times[1] += t1FPGA; // dot-product time
+  times[2] += t2FPGA; // WAXPBY time
+  times[3] += t3FPGA; // SPMV time
+  times[4] += t4FPGA; // AllReduce time
+  times[5] += t5FPGA; // preconditioner apply time
 //#ifndef HPCG_NO_MPI
 //  times[6] += t6; // exchange halo time
 //#endif
-  times[0] += mytimer() - t_begin;  // Total time. All done...
+  times[0] += t1FPGA+t2FPGA+t3FPGA+t4FPGA+t5FPGA;  // Total time. All done...
   return 0;
 }
