@@ -107,7 +107,7 @@ HPCG_LIBS     =
 #    *) Build with OpenMP enabled.
 #    *) Not generate debugging output.
 #
-HPCG_OPTS     = -DHPCG_NO_OPENMP -DFPGA
+HPCG_OPTS     = -DSINGLE -DFPGA
 #
 # ----------------------------------------------------------------------
 #
