@@ -45,8 +45,16 @@ compliant with MPI version 1.1 is sufficient.
 The FPGA implementation of HPCG has been developed keeping the same calculations as 
 the original software version of HPCG implementing specific optimizations for multiple FPGA execution.
 All the source code of the optimized version of HPCG is located in the `src-fpga` directory.
-All the code has been optimized for the Alveo U280 FPGA, and can be run using 1 or multiple boards.
-The 
+All the code has been optimized for the Alveo U280 FPGA, and can be run using one or multiple boards.
+Execution of the benchmark requires XRT 2020.1, also Vitis 2020.1 is necessary to build both the kernels
+and the host executable. 
+To build kernels simply navigate to the src-fpga folder and choose the desired precision for example:
+`cd src-fpga/double`
+From there type: `make all TARGET=hw`.
+To build the host executable go in the home directory and choose which precision you used to build the binaries so 
+that the host files are build accordingly, for example: `make arch=FPGA_DOUBLE`.
+Now you can execute the benchmark from the same position by typing the following: `mpirun -n 1 /bin/xhpcg 64 64 64`.
+To execute the benchmark on multiple nodes use a config file, example configfiles are stored in the `configFile` folder.   
 
 ## Results ##
 
