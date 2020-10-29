@@ -107,7 +107,7 @@ HPCG_LIBS     =
 #    *) Build with OpenMP enabled.
 #    *) Not generate debugging output.
 #
-HPCG_OPTS     = -DFPGA -DDOUBLE
+HPCG_OPTS     = -DFPGA -DDOUBLEW
 #
 # ----------------------------------------------------------------------
 #
@@ -119,7 +119,7 @@ HPCG_DEFS     = $(HPCG_OPTS) $(HPCG_INCLUDES)
 #
 CXX          = mpicxx
 #CXXFLAGS     = $(HPCG_DEFS) -fomit-frame-pointer -O3 -funroll-loops -W -Wall
-CXXFLAGS     = $(HPCG_DEFS) -O3 -ffast-math -ftree-vectorize -ftree-vectorizer-verbose=0
+CXXFLAGS     = $(HPCG_DEFS) -O3 -ffast-math -fopenmp -ftree-vectorize -ftree-vectorizer-verbose=0
 #
 LINKER       = $(CXX)
 LINKFLAGS    = $(CXXFLAGS)
