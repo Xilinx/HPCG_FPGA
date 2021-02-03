@@ -3,7 +3,7 @@
 # High Performance Conjugate Gradient Benchmark (HPCG) - FPGA #
 
 
-FPGA port, forked from original HPCG Revision: 3.1 Date: March 28, 2019
+FPGA port from Xilinx Research Labs, forked from original HPCG Revision: 3.1 Date: March 28, 2019
 
 ## Introduction ##
 
