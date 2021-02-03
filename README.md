@@ -1,15 +1,9 @@
-<p align="center">
-  <img width="600" height="313.5" src="https://gitenterprise.xilinx.com/albertoz/hpcg_fpga/blob/master/media/xilinx.jpg">
-</p>
+
 
 # High Performance Conjugate Gradient Benchmark (HPCG) - FPGA #
 
 
-FPGA version by Alberto Zeni and Kenneth O'Brien - Xilinx Inc.
-
-Based on HPCG:
-
-Original HPCG Revision: 3.1 Date: March 28, 2019
+FPGA port, forked from original HPCG Revision: 3.1 Date: March 28, 2019
 
 ## Introduction ##
 
