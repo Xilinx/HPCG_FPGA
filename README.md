@@ -36,19 +36,48 @@ compliant with MPI version 1.1 is sufficient.
 
 ## FPGA Implementation ##
 
+The FPGA Implementation of HPCG focuses on implementing all the different kernels inside the benchmark in our design: Dot Product Multiplication (DP), Sparse Matrix Vector Multiplication (SPMV), Symmetric Gauss-Seidel Smoother (SYMGS) and Vector Vector Co-efficient Multiplication (WAXPBY).
+
+<!-- ### Dot Product Multiplication Kenrel  ### -->
+
+## Building for the FPGA ##
+
 The FPGA implementation of HPCG has been developed keeping the same calculations as 
-the original software version of HPCG implementing specific optimizations for multiple FPGA execution.
-All the source code of the optimized version of HPCG is located in the `src-fpga` directory.
-All the code has been optimized for the Alveo U280 FPGA, and can be run using one or multiple boards.
+the original software version of HPCG implementing specific optimizations for multiple FPGA execution.<br/>
+All the source code of the optimized version of HPCG is located in the `src-fpga` directory.<br/>
+All the code has been designed to target the Alveo U280 FPGA, and can be run using one or multiple boards.<br/>
 Execution of the benchmark requires XRT 2020.1, also Vitis 2020.1 is necessary to build both the kernels
-and the host executable. 
-To build kernels simply navigate to the src-fpga folder and choose the desired precision for example:
-`cd src-fpga/double`
-From there type: `make all TARGET=hw`.
+and the host executable. <br/>
+To build kernels simply navigate to the `src-fpga` directory and choose the desired precision for example: <br/>
+`cd src-fpga/double`<br/>
+From there type:<br/>
+`make all TARGET=hw`
+The Makefile looks for the Xilinx Alveo U280 platform (DSA version 2019.3) in the default installation path (/opt/xilinx/platforms).<br/>
+If the path to the DSA is different, the user needs to specify the path when building the kernels in the following way:<br/>
+`PLATFORM=/path_to_platform/xilinx_u280_xdma_201920_3.xpfm`<br/>
 To build the host executable go in the home directory and choose which precision you used to build the binaries so 
-that the host files are build accordingly, for example: `make arch=FPGA_DOUBLE`.
-Now you can execute the benchmark from the same position by typing the following: `mpirun -n 1 /bin/xhpcg 64 64 64`.
-To execute the benchmark on multiple nodes use a config file, example configfiles are stored in the `configFile` folder.   
+that the host files are build accordingly, for example:<br/>
+`make arch=FPGA_DOUBLE`.<br/>
+This will generate the host executable that will target double precision operations.<br/>
+Inside the `src-fpga/` directory multiple versions of the benchmark are present.<br/>
+We implemented the Benchmark using different degrees of precision to test the performance of the FPGA.<br/>
+If one desires to build for a lower precision than the one used normally in the Benchmark both host executable and FPGA build need to be adjusted accordingly.<br/>
+To build for a lower precision simply go in the directory inside src-fpga and build for the FPGA in the same way as before:<br/>
+`cd src-fpga/half`<br/>
+`make all TARGET=hw`<br/>
+This will build the kernels using half precision operations.<br/>
+To build the host executable accordingly simply go into the home directory of the repository and type:
+`make arch=FPGA_HALF`
+
+## Executing on the FPGA ##
+
+To execute the benchmark position yourself on the home directory of the repository and type:<br/>
+`mpirun -n 1 /bin/xhpcg 64 64 64`<br/>
+The syntax of the host executable is the following:<br/>
+`mpirun -n <number_of_mpi_nodes> <path_to_hpcg_executable> <dim_x> <dim_y> <dim_z>`
+To execute the benchmark on multiple nodes use a config file,
+example configfiles are stored in the `configFile` directory.   
+IP addresses of the other host machines need to be specified inside the configFile for proper execution.
 
 ## Results ##
 

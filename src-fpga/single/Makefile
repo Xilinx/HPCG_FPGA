@@ -36,7 +36,7 @@ ABS_COMMON_REPO = $(shell readlink -f $(COMMON_REPO))
 TARGET := sw_emu
 HOST_ARCH := x86
 SYSROOT := 
-DEVICE = /proj/xbuilds/2019.2_daily_latest/internal_platforms/xilinx_u280_xdma_201920_3/xilinx_u280_xdma_201920_3.xpfm
+DEVICE = /opt/xilinx/platforms/xilinx_u280_xdma_201920_3/xilinx_u280_xdma_201920_3.xpfm
 
 include ./utils.mk
 
