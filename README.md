@@ -36,6 +36,10 @@ compliant with MPI version 1.1 is sufficient.
 
 ## FPGA Implementation ##
 
+The FPGA Implementation of HPCG focuses on implementing all the different kernels inside the benchmark in our design: Dot Product Multiplication (DP), Sparse Matrix Vector Multiplication (SPMV), Symmetric Gauss-Seidel Smoother (SYMGS) and Vector Vector Co-efficient Multiplication (WAXPBY).
+
+<!-- ### Dot Product Multiplication Kenrel  ### -->
+
 ## Building for the FPGA ##
 
 The FPGA implementation of HPCG has been developed keeping the same calculations as 
@@ -45,7 +49,7 @@ All the code has been designed to target the Alveo U280 FPGA, and can be run usi
 Execution of the benchmark requires XRT 2020.1, also Vitis 2020.1 is necessary to build both the kernels
 and the host executable. <br/>
 To build kernels simply navigate to the `src-fpga` directory and choose the desired precision for example: <br/>
-`cd src-fpga/double`
+`cd src-fpga/double`<br/>
 From there type:<br/>
 `make all TARGET=hw`
 The Makefile looks for the Xilinx Alveo U280 platform (DSA version 2019.3) in the default installation path (/opt/xilinx/platforms).<br/>
