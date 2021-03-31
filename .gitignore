@@ -1,5 +1,9 @@
 *.txt
 out
+build_dir.*
+_x.*
+*.log
+*.Xil
 *.swp
 src/*.o
 *.xclbin
