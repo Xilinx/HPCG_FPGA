@@ -127,3 +127,18 @@ significant fraction of *main memory*, at least 1/4 of the total.
 Future memory system architectures may require restatement of the specific memory
 size requirements.  But the guiding principle will always be that the problem
 size should reflect what would be reasonable for a real sparse iterative solver.
+
+## Citation ##
+
+To cite this FPGA port of HPCG please use:
+
+```
+@inproceedings{zeni2021optimized,
+    title={Optimized Implementation of the HPCG Benchmark on Reconfigurable Hardware},
+   author={Zeni, Alberto and O’Brien, Kenneth and Blott, Michaela and Santambrogio, Marco D},
+   booktitle={European Conference on Parallel Processing},
+    pages={616--630},
+    year={2021},
+   organization={Springer}
+  }
+  ```
