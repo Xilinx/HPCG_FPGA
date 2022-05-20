@@ -21,7 +21,7 @@ void symgs(
 
 #pragma HLS INTERFACE s_axilite port = size bundle = control
 #pragma HLS INTERFACE s_axilite port = non_zero bundle = control
-#pragma HLS INTERFACE s_axilite port = in_times bundle = control
+#pragma HLS INTERFACE s_axilite port = n_times bundle = control
 #pragma HLS INTERFACE s_axilite port = return bundle = control
 
 #pragma HLS data_pack variable = in1
